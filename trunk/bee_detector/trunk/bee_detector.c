@@ -61,7 +61,7 @@ int main(void)
  	//	CLK.CTRL = CLK_RC32MHZ_gc;				//change clock to 32MHz
 
  	CCPWrite( &CLK.CTRL, CLK_RC32MHZ_gc);
- 	CCPWrite( &CLK.PSCTRL, CLK_PSADIV_2_gc);
+ //	CCPWrite( &CLK.PSCTRL, CLK_PSADIV_2_gc);
 
  	OSC.CTRL &= ~OSC_RC2MEN_bm;				// disable internal 2MHz oscillator
  	
@@ -75,6 +75,9 @@ int main(void)
  	_delay_ms(500);
  	RTC_Init();
  	LED_PORT.OUTSET = _BV(LED2); 	//switching ON the LED (for testing purpose only)
+	 
+	//start the DLL for stabilization of the main oscillator
+	
  	_delay_ms(500);
  	sei();						// global interrupts enable
  	
