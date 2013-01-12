@@ -21,18 +21,24 @@ volatile uint8_t ADC_Status;
 ISR(ADC_INT0)
 {
 	const prog_int16_t *window = tbl_window;
-	static uint16_t adc_i = 0;
+	static uint16_t adc_i = 0, adc_deci = 0;
 	int16_t v, vv;
-	
-	v = ADCA.CH0RES - 0x0864;	// 0V = 0x0C8... 1/2 je o cca 200dec vyssie ako 0x7FF
-	Signal[0][adc_i] = v;
+//  urobit kalibraciu 0 ako jedno cele meranie a vypocitat priemernu hodnotu - ulozit do eeprom?	
+	v = ADCA.CH0RES - 0x0874;	// 0V = 0x0C8... 1/2 je o cca 200dec vyssie ako 0x7FF
+	Signal[0][adc_i] += v;
 //	PORTD.OUTTGL = _BV(LED0);		//sampling frequency test
 //	65kHz sampling frequency; with clk div by 2, sampling frequenci 32.4kHz...
 	
 //	vv = FFT_Fmuls_f(v, pgm_read_word(window + adc_i));
 //	Bfly_buffer[adc_i].r = vv;
 //	Bfly_buffer[adc_i].i = vv;
-	adc_i++;
+	adc_deci++;
+	if(adc_deci == 4)
+	{
+		Signal[0][adc_i] >>= 1;		//Decimation by 2
+		adc_i++;
+		adc_deci = 0;
+	}
 	
 	if(adc_i == FFT_N)
 	{
@@ -54,7 +60,7 @@ void ADC_Init(void)
 	ADCA.CTRLA = ADC_ENABLE_bm | ADC_FLUSH_bm;	// enable ADC, no DMA controll, no conversion start, flush pipeline 
 	ADCA.CTRLB = ADC_IMPMODE_LOWIMP_gc | ADC_CURRLIMIT_NO_gc | ADC_RESOLUTION_12BIT_gc | ADC_FREERUN_bm;		// freerunning at this time?
 	ADCA.REFCTRL = ADC_REFSEL_VCC_gc | ADC_BANDGAP_bm;		// enable bandgap, reference = VCC/1.6
-	ADCA.PRESCALER = ADC_PRESCALER_DIV512_gc;					// clk/512 - 31.25kSps @ 16MHz
+	ADCA.PRESCALER = ADC_PRESCALER_DIV256_gc;				// clk/512 - 31.25kSps @ 16MHz; clk/256 - 125kSps @ 32MHz, decimated by 2 - 13bit @ 31.25kSps
 //  ADCA.EVCTRL = 		//event control	
 //  ADCA.EVCTRL = 		//event control	
 //#if ADC_INT_ENABLE == 1
