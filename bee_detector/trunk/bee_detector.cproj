@@ -120,45 +120,26 @@
     <OutputFileName>bee_detector</OutputFileName>
     <OutputFileExtension>.elf</OutputFileExtension>
     <OutputType>Executable</OutputType>
-    <UsesExternalMakeFile>True</UsesExternalMakeFile>
-    <OutputDirectory>z:\kicad\work\Bee_detector\SW_xmega_studio\bee_detector</OutputDirectory>
+    <UsesExternalMakeFile>False</UsesExternalMakeFile>
     <ExternalMakeFilePath>z:\kicad\work\Bee_detector\SW_xmega_studio\bee_detector\Makefile</ExternalMakeFilePath>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="adc.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="adc.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="bee_detector.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="dma_driver.c">
+    <None Include="dma_driver.c">
       <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="dma_driver.h">
-      <SubType>compile</SubType>
-    </Compile>
+    </None>
     <Compile Include="FAT32.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="FAT32.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="ffft.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="ffft.S">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="hw.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="routines.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="routines.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="rtc.c">
@@ -170,20 +151,9 @@
     <Compile Include="SD_routines.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="sd_routines.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="spi.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="spi.h">
-      <SubType>compile</SubType>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Makefile">
-      <SubType>compile</SubType>
-    </None>
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
