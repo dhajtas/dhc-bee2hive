@@ -77,6 +77,8 @@ int main(void)
  	LED_PORT.OUTSET = _BV(LED2); 	//switching ON the LED (for testing purpose only)
 	 
 	//start the DLL for stabilization of the main oscillator
+	OSC.DFLLCTRL = 0x00;
+	DFLLRC32M.CTRL = DFLL_ENABLE_bm;
 	
  	_delay_ms(500);
  	sei();						// global interrupts enable
