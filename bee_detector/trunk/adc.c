@@ -21,10 +21,12 @@ volatile uint8_t ADC_Status;
 ISR(ADC_INT0)
 {
 	const prog_int16_t *window = tbl_window;
-	static uint16_t adc_i = 0, adc_deci = 0;
+	static uint16_t adc_i = 0; 
+	static uint8_t adc_deci = 0;
 	int16_t v, vv;
 //  urobit kalibraciu 0 ako jedno cele meranie a vypocitat priemernu hodnotu - ulozit do eeprom?	
-	v = ADCA.CH0RES - 0x0874;	// 0V = 0x0C8... 1/2 je o cca 200dec vyssie ako 0x7FF
+//	v = ADCA.CH0RES - 0x0874;	// 0V = 0x0C8... 1/2 je o cca 200dec vyssie ako 0x7FF
+	v = ADCA.CH0RES;			// 0V = 0x0C8... 1/2 je o cca 200dec vyssie ako 0x7FF
 	Signal[0][adc_i] += v;
 //	PORTD.OUTTGL = _BV(LED0);		//sampling frequency test
 //	65kHz sampling frequency; with clk div by 2, sampling frequenci 32.4kHz...
@@ -36,6 +38,7 @@ ISR(ADC_INT0)
 	if(adc_deci == 4)
 	{
 		Signal[0][adc_i] >>= 1;		//Decimation by 2
+		Signal[0][adc_i] -= adc_cal[0];
 		adc_i++;
 		adc_deci = 0;
 	}
@@ -91,6 +94,19 @@ void ADC_Init(void)
 	ADCA.CH0.CTRL |= ADC_CH_START_bm;				// equivalent to previous one...
 	ADC_Status = 0;
 //#endif //ADC_INT_ENABLE	
+}
+
+uint16_t ADC_cal(uint8_t channel)
+{
+	uint16_t i;
+	uint32_t cal = 0;
+	
+	for(i=0;i<FFT_N;i++)
+	{
+		cal += Signal[channel][i];
+	}
+	cal >>= 8;
+	return((uint16_t)cal);
 }
 
 /*

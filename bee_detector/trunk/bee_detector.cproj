@@ -19,7 +19,7 @@
     <KeepTimersRunning>true</KeepTimersRunning>
     <OverrideVtor>false</OverrideVtor>
     <OverrideVtorValue />
-    <eraseonlaunchrule>1</eraseonlaunchrule>
+    <eraseonlaunchrule>0</eraseonlaunchrule>
     <avrtool>com.atmel.avrdbg.tool.ispmk2</avrtool>
     <avrtoolinterface>PDI</avrtoolinterface>
     <com_atmel_avrdbg_tool_simulator>
