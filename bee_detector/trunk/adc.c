@@ -8,6 +8,7 @@
 #include "ffft.h"
 
 volatile uint8_t ADC_Status;
+volatile uint16_t adc_cal[12];
 
 /*---------------------------------------------------------------------------*/
 /*		ADC interrup routine												 */

@@ -138,6 +138,33 @@
     <Compile Include="ffft.S">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="include\adc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\dma_driver.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\FAT32.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\ffft.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\hw.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\routines.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\rtc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\sd_routines.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\spi.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="routines.c">
       <SubType>compile</SubType>
     </Compile>
@@ -153,6 +180,9 @@
     <Compile Include="spi.c">
       <SubType>compile</SubType>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="include" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
