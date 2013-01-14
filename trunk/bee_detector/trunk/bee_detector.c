@@ -96,6 +96,12 @@ int main(void)
 
 
  	ADC_Init();
+	for (x=0;x<6;x++)
+	{
+		while(!(ADC_Status & ADC0_FINISHED));
+		ADC_Cal[x*2] = ADC_cal(0);
+		ADC_Cal[x*2+1] = ADC_cal(1); 
+	}		
  	LED_PORT.OUTCLR = _BV(LED2);
  	
  	x = 0;

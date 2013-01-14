@@ -8,7 +8,7 @@
 #include "ffft.h"
 
 volatile uint8_t ADC_Status;
-volatile uint16_t adc_cal[12];
+volatile uint16_t ADC_Cal[12];
 
 /*---------------------------------------------------------------------------*/
 /*		ADC interrup routine												 */
@@ -39,7 +39,7 @@ ISR(ADC_INT0)
 	if(adc_deci == 4)
 	{
 		Signal[0][adc_i] >>= 1;		//Decimation by 2
-		Signal[0][adc_i] -= adc_cal[0];
+		Signal[0][adc_i] -= ADC_Cal[0];
 		adc_i++;
 		adc_deci = 0;
 	}
@@ -56,10 +56,16 @@ ISR(ADC_INT0)
 
 void ADC_Init(void)
 {
+	uint8_t ii=0;
 	ADC0_PORT.DIR = 0x00; 						// configure a2d port (PORTF) as input so we can receive analog signals
 	ADC1_PORT.DIR = 0x00; 						// configure a2d port (PORTF) as input so we can receive analog signals
 	PORTCFG.MPCMASK = 0xFF;						// copy settings to all pins
 	ADC0_PORT.PIN0CTRL = 0x07; 					// make sure pull-up resistors are turned off, digital input buffer disabled
+
+	for(ii=0;ii<12;ii++)						// clear zero point for all possible channels
+	{
+		ADC_Cal[ii] = 0;
+	}
 
 	ADCA.CTRLA = ADC_ENABLE_bm | ADC_FLUSH_bm;	// enable ADC, no DMA controll, no conversion start, flush pipeline 
 	ADCA.CTRLB = ADC_IMPMODE_LOWIMP_gc | ADC_CURRLIMIT_NO_gc | ADC_RESOLUTION_12BIT_gc | ADC_FREERUN_bm;		// freerunning at this time?
@@ -106,7 +112,7 @@ uint16_t ADC_cal(uint8_t channel)
 	{
 		cal += Signal[channel][i];
 	}
-	cal >>= 8;
+	cal = cal/FFT_N;
 	return((uint16_t)cal);
 }
 

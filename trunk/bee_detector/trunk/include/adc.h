@@ -27,9 +27,10 @@
 #define ADC_FREERUN_ON_gc			1<<3
 
 #if ADC_INT_ENABLE == 1
-extern volatile int16_t ADC_Buffer[10];
+//extern volatile int16_t ADC_Buffer[];
 extern volatile uint8_t ADC_Index;
 extern volatile uint8_t ADC_Status;
+extern volatile uint16_t ADC_Cal[];
 #endif
 
 
