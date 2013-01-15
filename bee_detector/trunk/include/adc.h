@@ -31,12 +31,13 @@
 extern volatile uint8_t ADC_Index;
 extern volatile uint8_t ADC_Status;
 extern volatile uint16_t ADC_Cal[];
+//extern volatile uint8_t ADC_CH0_PIN;
 #endif
 
 
 void ADC_Init(void);
 
-void ADC_chswitch(uint8_t channel0, uint8_t channel1);
+uint8_t ADC_chswitch(uint8_t channel0, uint8_t channel1);
 
 uint16_t ADC_cal(uint8_t channel);
 

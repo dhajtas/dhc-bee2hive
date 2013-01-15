@@ -19,7 +19,7 @@ volatile uint8_t ADC_CH0_PIN, ADC_CH1_PIN;
 
 //volatile int16_t ADC_Buffer[10];
 //volatile uint16_t ADC_Index;
-
+/*
 ISR(ADC_INT0)
 {
 //	const prog_int16_t *window = tbl_window;
@@ -53,6 +53,7 @@ ISR(ADC_INT0)
 		ADCA.CH0.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;		//0xFC;  	//disable interrupt from CH0
 	}
 }
+*/
 
 ISR(ADC_INT1)
 {
@@ -62,8 +63,10 @@ ISR(ADC_INT1)
 	int16_t v, vv;
 	//  urobit kalibraciu 0 ako jedno cele meranie a vypocitat priemernu hodnotu - ulozit do eeprom?
 	//	v = ADCA.CH0RES - 0x0874;	// 0V = 0x0C8... 1/2 je o cca 200dec vyssie ako 0x7FF
-	v = ADCA.CH1RES;				// 0V = 0x0C8... 1/2 je o cca 200dec vyssie ako 0x7FF
-	Signal[1][adc_i] += v;
+	v = ADCA.CH0RES;
+	vv = ADCA.CH1RES;				// 0V = 0x0C8... 1/2 je o cca 200dec vyssie ako 0x7FF
+	Signal[0][adc_i] += v;
+	Signal[1][adc_i] += vv;
 	//	PORTD.OUTTGL = _BV(LED0);		//sampling frequency test
 	//	65kHz sampling frequency; with clk div by 2, sampling frequenci 32.4kHz...
 	
@@ -73,8 +76,10 @@ ISR(ADC_INT1)
 	adc_deci++;
 	if(adc_deci == 4)
 	{
+		Signal[0][adc_i] >>= 1;		//Decimation by 2
+		Signal[0][adc_i] -= ADC_Cal[ADC_CH0_PIN];
 		Signal[1][adc_i] >>= 1;		//Decimation by 2
-		Signal[1][adc_i] -= ADC_Cal[ADC_CH1_PIN];
+		Signal[1][adc_i] -= ADC_Cal[ADC_CH0_PIN+1];
 		adc_i++;
 		adc_deci = 0;
 	}
@@ -82,9 +87,9 @@ ISR(ADC_INT1)
 	if(adc_i == FFT_N)
 	{
 		adc_i = 0;
-		ADC_Status |= ADC1_FINISHED;
+		ADC_Status |= ADC1_FINISHED|ADC0_FINISHED;
 		ADCA.CTRLB &= ~ADC_FREERUN_bm;									 		//disable freerunning... (if in freerunning mode)
-		ADCA.CH1.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;		//0xFC;  	//disable interrupt from CH0
+		ADCA.CH1.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;		//0xFC;  	//disable interrupt from CH1
 	}
 }
 //#endif //ADC_INT_ENABLE
@@ -103,18 +108,21 @@ void ADC_Init(void)
 	}
 
 	ADCA.CTRLA = ADC_ENABLE_bm | ADC_FLUSH_bm;	// enable ADC, no DMA controll, no conversion start, flush pipeline 
-	ADCA.CTRLB = ADC_IMPMODE_LOWIMP_gc | ADC_CURRLIMIT_NO_gc | ADC_RESOLUTION_12BIT_gc | ADC_FREERUN_bm;		// freerunning at this time?
+	ADCA.CTRLB = ADC_IMPMODE_LOWIMP_gc | ADC_CURRLIMIT_NO_gc | ADC_RESOLUTION_12BIT_gc;		// freerunning at this time?
 	ADCA.REFCTRL = ADC_REFSEL_VCC_gc | ADC_BANDGAP_bm;		// enable bandgap, reference = VCC/1.6
 	ADCA.PRESCALER = ADC_PRESCALER_DIV256_gc;				// clk/512 - 31.25kSps @ 16MHz; clk/256 - 125kSps @ 32MHz, decimated by 2 - 13bit @ 31.25kSps
+	ADCA.EVCTRL = ADC_SWEEP_01_gc;							// freerunning channels 0 1
 //  ADCA.EVCTRL = 		//event control	
 //  ADCA.EVCTRL = 		//event control	
 //#if ADC_INT_ENABLE == 1
 	ADCA.CH0.CTRL = ADC_CH_INPUTMODE_SINGLEENDED_gc;	// selects single-ended conversion
 	ADCA.CH1.CTRL = ADC_CH_INPUTMODE_SINGLEENDED_gc;	// selects single-ended conversion
 	ADC_chswitch(0,1);
-	ADCA.CH0.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;		// enable interrupt & free running mode
+//	ADCA.CH0.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;		// enable interrupt & free running mode
+// only interrupt on channel 1, channel 0 done 1 ADC clk before - given by design
 	ADCA.CH1.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;		// enable interrupt & free running mode
 	PMIC.CTRL |= PMIC_HILVLEN_bm;			// enable low level interrupts
+
 // 	Preparing for DMA transfers in future
 //	DMA.CTRL = DMA_ENABLE_bm;
 //	DMA.CTRL |= DMA_PRIMODE_CH0123_gc;
@@ -132,17 +140,24 @@ void ADC_Init(void)
 //	DMA.CH0.CTRLA |= DMA_CH_ENABLE_bm;
 
 
-
-	ADCA.CTRLA |= ADC_CH0START_bm || ADC_CH1START_bm;					// first conversion needs to be started, free running continues...
+	ADCA.CTRLB |= ADC_FREERUN_bm;							// start freerun - no start necessary???
+//	ADCA.CTRLA |= ADC_CH0START_bm || ADC_CH1START_bm;					// first conversion needs to be started, free running continues...
 //	ADCA.CH0.CTRL |= ADC_CH_START_bm;				// equivalent to previous one...
 	ADC_Status = 0;
 //#endif //ADC_INT_ENABLE	
 }
 
-void ADC_chswitch(uint8_t channel0, uint8_t channel1)
+uint8_t ADC_chswitch(uint8_t channel0, uint8_t channel1)
 {
-	ADCA.CH0.MUXCTRL = ADC_CH_MUXPOS_PIN0_gc + (channel0<<3);
-	ADCA.CH1.MUXCTRL = ADC_CH_MUXPOS_PIN0_gc + (channel1<<3);
+	ADC_CH0_PIN = channel0;
+	ADC_CH1_PIN = channel1;
+	if (ADC_CH0_PIN > 10)
+		ADC_CH0_PIN = 0;
+	if (ADC_CH1_PIN > 11)
+		ADC_CH1_PIN = 1;
+	ADCA.CH0.MUXCTRL = ADC_CH_MUXPOS_PIN0_gc + (ADC_CH0_PIN<<3);
+	ADCA.CH1.MUXCTRL = ADC_CH_MUXPOS_PIN0_gc + (ADC_CH1_PIN<<3);
+	return(ADC_CH0_PIN | (ADC_CH1_PIN<<4));
 }
 
 
