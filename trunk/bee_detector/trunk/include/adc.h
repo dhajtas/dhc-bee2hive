@@ -36,6 +36,8 @@ extern volatile uint16_t ADC_Cal[];
 
 void ADC_Init(void);
 
+void ADC_chswitch(uint8_t channel0, uint8_t channel1);
+
 uint16_t ADC_cal(uint8_t channel);
 
 #if ADC_INT_ENABLE == 0

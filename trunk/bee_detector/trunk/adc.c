@@ -9,6 +9,7 @@
 
 volatile uint8_t ADC_Status;
 volatile uint16_t ADC_Cal[12];
+volatile uint8_t ADC_CH0_PIN, ADC_CH1_PIN;
 
 /*---------------------------------------------------------------------------*/
 /*		ADC interrup routine												 */
@@ -21,7 +22,7 @@ volatile uint16_t ADC_Cal[12];
 
 ISR(ADC_INT0)
 {
-	const prog_int16_t *window = tbl_window;
+//	const prog_int16_t *window = tbl_window;
 	static uint16_t adc_i = 0; 
 	static uint8_t adc_deci = 0;
 	int16_t v, vv;
@@ -39,7 +40,7 @@ ISR(ADC_INT0)
 	if(adc_deci == 4)
 	{
 		Signal[0][adc_i] >>= 1;		//Decimation by 2
-		Signal[0][adc_i] -= ADC_Cal[0];
+		Signal[0][adc_i] -= ADC_Cal[ADC_CH0_PIN];
 		adc_i++;
 		adc_deci = 0;
 	}
@@ -48,8 +49,42 @@ ISR(ADC_INT0)
 	{
 		adc_i = 0;
 		ADC_Status |= ADC0_FINISHED;
-		ADCA.CTRLB &= ~ADC_FREERUN_bm;									 		//disable freerunning... (if in freerunning mode)
+//		ADCA.CTRLB &= ~ADC_FREERUN_bm;									 		//disable freerunning... (if in freerunning mode)
 		ADCA.CH0.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;		//0xFC;  	//disable interrupt from CH0
+	}
+}
+
+ISR(ADC_INT1)
+{
+//	const prog_int16_t *window = tbl_window;
+	static uint16_t adc_i = 0;
+	static uint8_t adc_deci = 0;
+	int16_t v, vv;
+	//  urobit kalibraciu 0 ako jedno cele meranie a vypocitat priemernu hodnotu - ulozit do eeprom?
+	//	v = ADCA.CH0RES - 0x0874;	// 0V = 0x0C8... 1/2 je o cca 200dec vyssie ako 0x7FF
+	v = ADCA.CH1RES;				// 0V = 0x0C8... 1/2 je o cca 200dec vyssie ako 0x7FF
+	Signal[1][adc_i] += v;
+	//	PORTD.OUTTGL = _BV(LED0);		//sampling frequency test
+	//	65kHz sampling frequency; with clk div by 2, sampling frequenci 32.4kHz...
+	
+	//	vv = FFT_Fmuls_f(v, pgm_read_word(window + adc_i));
+	//	Bfly_buffer[adc_i].r = vv;
+	//	Bfly_buffer[adc_i].i = vv;
+	adc_deci++;
+	if(adc_deci == 4)
+	{
+		Signal[1][adc_i] >>= 1;		//Decimation by 2
+		Signal[1][adc_i] -= ADC_Cal[ADC_CH1_PIN];
+		adc_i++;
+		adc_deci = 0;
+	}
+	
+	if(adc_i == FFT_N)
+	{
+		adc_i = 0;
+		ADC_Status |= ADC1_FINISHED;
+		ADCA.CTRLB &= ~ADC_FREERUN_bm;									 		//disable freerunning... (if in freerunning mode)
+		ADCA.CH1.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_OFF_gc;		//0xFC;  	//disable interrupt from CH0
 	}
 }
 //#endif //ADC_INT_ENABLE
@@ -75,9 +110,10 @@ void ADC_Init(void)
 //  ADCA.EVCTRL = 		//event control	
 //#if ADC_INT_ENABLE == 1
 	ADCA.CH0.CTRL = ADC_CH_INPUTMODE_SINGLEENDED_gc;	// selects single-ended conversion
-	ADCA.CH0.MUXCTRL = ADC_CH_MUXPOS_PIN0_gc;			// pin PA0(ADC0)
-
+	ADCA.CH1.CTRL = ADC_CH_INPUTMODE_SINGLEENDED_gc;	// selects single-ended conversion
+	ADC_chswitch(0,1);
 	ADCA.CH0.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;		// enable interrupt & free running mode
+	ADCA.CH1.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;		// enable interrupt & free running mode
 	PMIC.CTRL |= PMIC_HILVLEN_bm;			// enable low level interrupts
 // 	Preparing for DMA transfers in future
 //	DMA.CTRL = DMA_ENABLE_bm;
@@ -97,12 +133,20 @@ void ADC_Init(void)
 
 
 
-//	ADCA.CTRLA |= ADC_CH0START_gc;					// first conversion needs to be started, free running continues...
-	ADCA.CH0.CTRL |= ADC_CH_START_bm;				// equivalent to previous one...
+	ADCA.CTRLA |= ADC_CH0START_bm || ADC_CH1START_bm;					// first conversion needs to be started, free running continues...
+//	ADCA.CH0.CTRL |= ADC_CH_START_bm;				// equivalent to previous one...
 	ADC_Status = 0;
 //#endif //ADC_INT_ENABLE	
 }
 
+void ADC_chswitch(uint8_t channel0, uint8_t channel1)
+{
+	ADCA.CH0.MUXCTRL = ADC_CH_MUXPOS_PIN0_gc + (channel0<<3);
+	ADCA.CH1.MUXCTRL = ADC_CH_MUXPOS_PIN0_gc + (channel1<<3);
+}
+
+
+ADC_CH_MUXPOS
 uint16_t ADC_cal(uint8_t channel)
 {
 	uint16_t i;
