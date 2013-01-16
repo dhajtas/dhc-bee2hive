@@ -1,7 +1,7 @@
 #ifndef __ADC_H__
 #define __ADC_H__
 
-#include "ffft.h"
+//#include "ffft.h"
 
 //----------------------------------------------------------
 //						DEFS
