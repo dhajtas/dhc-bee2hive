@@ -5,6 +5,8 @@
  *  Author: dundee
  */ 
 
+#define F_CPU	32000000
+
 #include <stdio.h>
 #include <inttypes.h>
 #include <util/delay.h>
@@ -12,11 +14,11 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 
-#include "hw.h"
+#include "include/hw.h"
 #if RSCOM == 1
 #include "uart.h"
 #endif		//RSCOM
-#include "adc.h"
+#include "include/adc.h"
 #include "ffft.h"
 #include "rtc.h"
 #include "sd_routines.h"
