@@ -94,6 +94,19 @@ ISR(ADC_INT1)
 }
 //#endif //ADC_INT_ENABLE
 
+uint8_t ADC_chswitch(uint8_t channel0, uint8_t channel1)
+{
+	ADC_CH0_PIN = channel0;
+	ADC_CH1_PIN = channel1;
+	if (ADC_CH0_PIN > 10)
+	ADC_CH0_PIN = 0;
+	if (ADC_CH1_PIN > 11)
+	ADC_CH1_PIN = 1;
+	ADCA.CH0.MUXCTRL = ADC_CH_MUXPOS_PIN0_gc + (ADC_CH0_PIN<<3);
+	ADCA.CH1.MUXCTRL = ADC_CH_MUXPOS_PIN0_gc + (ADC_CH1_PIN<<3);
+	return(ADC_CH0_PIN | (ADC_CH1_PIN<<4));
+}
+
 void ADC_Init(void)
 {
 	uint8_t ii=0;
@@ -147,21 +160,7 @@ void ADC_Init(void)
 //#endif //ADC_INT_ENABLE	
 }
 
-uint8_t ADC_chswitch(uint8_t channel0, uint8_t channel1)
-{
-	ADC_CH0_PIN = channel0;
-	ADC_CH1_PIN = channel1;
-	if (ADC_CH0_PIN > 10)
-		ADC_CH0_PIN = 0;
-	if (ADC_CH1_PIN > 11)
-		ADC_CH1_PIN = 1;
-	ADCA.CH0.MUXCTRL = ADC_CH_MUXPOS_PIN0_gc + (ADC_CH0_PIN<<3);
-	ADCA.CH1.MUXCTRL = ADC_CH_MUXPOS_PIN0_gc + (ADC_CH1_PIN<<3);
-	return(ADC_CH0_PIN | (ADC_CH1_PIN<<4));
-}
 
-
-ADC_CH_MUXPOS
 uint16_t ADC_cal(uint8_t channel)
 {
 	uint16_t i;
