@@ -107,9 +107,13 @@ int main(void)
 		ADC_Status &= ~ADC1_FINISHED;
 		while(!(ADCA.INTFLAGS));	//???					// test if pending conversion is finished...
 		ADCA.INTFLAGS = 0xFF;								// clear any int flags
-		ADC_chswitch();										//switch to other channel pair
-		ADCA.CTRLB |= ADC_FREERUN_bm;						//enable freerunning... (if in freerunning mode)
-//		ADCA.CTRLA |= ADC_CH0START_bm || ADC_CH1START_bm;	// start the conversion
+		ADC_chswitch(x+2,x+3);								//switch to other channel pair
+		if(x<5)												// if last pair do not start new conversion
+		{
+			ADCA.CH1.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;		// enable interrupt & free running mode
+			ADCA.CTRLB |= ADC_FREERUN_bm;						//enable freerunning... (if in freerunning mode)
+//			ADCA.CTRLA |= ADC_CH0START_bm || ADC_CH1START_bm;	// start the conversion
+		}		
 	}
 			
  	LED_PORT.OUTCLR = _BV(LED2);
@@ -214,7 +218,7 @@ int main(void)
 					 	FFT_Output(Bfly_buffer,Spectrum);
 					 	writeSpectrum(0,FFT_N/2,Spectrum,0);
 					 	save_count++;
-						ADC_chswitch();
+//						ADC_chswitch();			//zatial neprepinat kanaly, merat len 0,1
 				 	}
 				 	else
 				 	{
@@ -229,11 +233,12 @@ int main(void)
 		 	
 		 	//			ADCSRA |= _BV(ADFR)|_BV(ADIE);
 		 	//			ADCSRA |= _BV(ADSC);
-		 	ADCA.CTRLB |= ADC_FREERUN_bm;									 		//enable freerunning... (if in freerunning mode)
-		 	ADCA.CH0.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;
-		 	ADCA.CH1.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;
+	 		ADCA.INTFLAGS = 0xFF;								// clear any int flags
+//		 	ADCA.CH0.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;
+		 	ADCA.CH1.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;	// INT len na kanale 1
 //		 	ADCA.CH0.CTRL |= ADC_CH_START_bm;					// Start first conversion...
-			ADCA.CTRLA |= ADC_CH0START_bm || ADC_CH1START_bm;	// start the conversion
+//			ADCA.CTRLA |= ADC_CH0START_bm || ADC_CH1START_bm;	// start the conversion
+		 	ADCA.CTRLB |= ADC_FREERUN_bm;									 		//enable freerunning... (if in freerunning mode)
 	 	}
 	 	
 	 	if(Status & RTC_UPDATE)
