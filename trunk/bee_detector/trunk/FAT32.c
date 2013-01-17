@@ -15,13 +15,13 @@
 #include <avr/pgmspace.h>
 #include <stdio.h>
 #if BIGAVR == 1
-	#include "glcd.h"
-	#include "k0108.h"
+	#include "include/glcd.h"
+	#include "include/k0108.h"
 #endif
-#include "SD_routines.h"
-#include "FAT32.h"
-#include "spi.h"
-#include "rtc.h"
+#include "include/SD_routines.h"
+#include "include/FAT32.h"
+#include "include/spi.h"
+#include "include/rtc.h"
 
 static uint16_t BlockCounter __attribute__ ((section (".noinit")));
 uint16_t AppendStartSector __attribute__ ((section (".noinit")));

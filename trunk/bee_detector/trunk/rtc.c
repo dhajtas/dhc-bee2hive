@@ -3,13 +3,13 @@
 #include <avr/interrupt.h>
 //test
 #include <avr/io.h>
-#include "spi.h"
+#include "include/spi.h"
 //endtest
 #include <inttypes.h>
 #include <stdio.h>
 
-#include "hw.h"
-#include "rtc.h"
+#include "include/hw.h"
+#include "include/rtc.h"
 
 
 DATE_t ADate[2] __attribute__ ((section (".noinit")));

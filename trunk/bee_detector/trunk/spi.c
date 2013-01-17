@@ -22,8 +22,8 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#include "hw.h"
-#include "spi.h"
+#include "include/hw.h"
+#include "include/spi.h"
 
 // Define the SPI_USEINT key if you want SPI bus operation to be
 // interrupt-driven.  The primary reason for not using SPI in

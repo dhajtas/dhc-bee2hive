@@ -3,9 +3,9 @@
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 
-#include "hw.h"
-#include "adc.h"
-#include "ffft.h"
+#include "include/hw.h"
+#include "include/adc.h"
+#include "include/ffft.h"
 
 volatile uint8_t ADC_Status;
 volatile uint16_t ADC_Cal[12];

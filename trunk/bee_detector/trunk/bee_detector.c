@@ -16,15 +16,15 @@
 
 #include "include/hw.h"
 #if RSCOM == 1
-#include "uart.h"
+#include "include/uart.h"
 #endif		//RSCOM
 #include "include/adc.h"
-#include "ffft.h"
-#include "rtc.h"
-#include "sd_routines.h"
-#include "FAT32.h"
-#include "spi.h"
-#include "routines.h"
+#include "include/ffft.h"
+#include "include/rtc.h"
+#include "include/sd_routines.h"
+#include "include/FAT32.h"
+#include "include/spi.h"
+#include "include/routines.h"
 
 volatile uint8_t Status;
 volatile uint8_t SD_Status;
@@ -43,7 +43,7 @@ void CCPWrite(volatile uint8_t * address, uint8_t value);
 int main(void)
 {
  	uint8_t x, save_count = 0, error = 0;
- 	//	uint8_t old_m = 0;
+ 	uint8_t write_restart = 0;
  	//	uint16_t i;
 
  	uint8_t filename[13];
@@ -204,7 +204,8 @@ int main(void)
 			 	{
 				 	if(!(SD_Status & SD_MEASUREMENT))
 				 	{
-					 	sprintf_P(filename,PSTR("B%02d%02d%02d.dat"),(sysdate->y - 20), sysdate->m, sysdate->d);
+						write_restart++;
+					 	sprintf_P(filename,PSTR("B%02d%02d%02d.d%02d"),(sysdate->y - 20), sysdate->m, sysdate->d, write_restart);
 					 	openFile(filename,0,0);
 					 	SD_Status |= SD_MEASUREMENT;
 				 	}
@@ -270,6 +271,7 @@ int main(void)
 					 	SD_Status &= ~SD_MEASUREMENT;
 					 	writeSpectrum(1,FFT_N/2,Spectrum,0);		//end of file
 					 	closeFile(0);
+						write_restart = 0;
 				 	}
 				 	LED_PORT.OUTCLR = _BV(LED2);
 			 	}
@@ -284,7 +286,7 @@ int main(void)
 				 	case 1:										// ak je cas presne alebo ide zhora...
 				 	if(SD_Status & SD_FS_READY)
 				 	{
-					 	sprintf_P(filename,PSTR("B%02d%02d%02d.dat"),(sysdate->y - 20), sysdate->m, sysdate->d);
+					 	sprintf_P(filename,PSTR("B%02d%02d%02d.d%02d"),(sysdate->y - 20), sysdate->m, sysdate->d, write_restart);
 					 	openFile(filename,0,0);
 					 	SD_Status |= SD_MEASUREMENT;
 				 	}
