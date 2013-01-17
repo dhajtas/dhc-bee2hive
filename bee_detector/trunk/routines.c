@@ -3,11 +3,11 @@
 #include <inttypes.h>
 #include <avr/pgmspace.h>
 
-#include "rtc.h"
-#include "sd_routines.h"
-#include "routines.h"
-#include "FAT32.h"
-#include "rtc.h"
+#include "include/rtc.h"
+#include "include/sd_routines.h"
+#include "include/routines.h"
+#include "include/FAT32.h"
+#include "include/rtc.h"
 
 
 //uint8_t readCfgFile(DATE *adate,TIME *atime, uint8_t *filename_dat, uint8_t atomic)

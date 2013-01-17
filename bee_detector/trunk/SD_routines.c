@@ -17,9 +17,9 @@
 #include <util/delay.h>
 #include <stdio.h>
 
-#include "hw.h"
-#include "spi.h"
-#include "SD_routines.h"
+#include "include/hw.h"
+#include "include/spi.h"
+#include "include/SD_routines.h"
 //#include "UART_routines.h"
 
 #if BIGAVR == 0
