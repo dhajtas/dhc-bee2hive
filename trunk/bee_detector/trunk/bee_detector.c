@@ -281,18 +281,18 @@ int main(void)
 			 	switch(RTC_CmpTime(systime, &ATime[0]))
 			 	{
 				 	case 2:										// ak je cas vacsi ako zaciatok merania
-				 	if(RTC_CmpTime(systime, &ATime[1]))	// ak je cas vacsi ako koniec merania tak nic nerob
-				 	break;
+				 			if(RTC_CmpTime(systime, &ATime[1]))	// ak je cas vacsi ako koniec merania tak nic nerob
+				 				break;
 				 	case 1:										// ak je cas presne alebo ide zhora...
-				 	if(SD_Status & SD_FS_READY)
-				 	{
-					 	sprintf_P(filename,PSTR("B%02d%02d%02d.d%02d"),(sysdate->y - 20), sysdate->m, sysdate->d, write_restart);
-					 	openFile(filename,0,0);
-					 	SD_Status |= SD_MEASUREMENT;
-				 	}
-				 	Status |= MEASUREMENT;
+				 			if(SD_Status & SD_FS_READY)
+				 			{
+					 			sprintf_P(filename,PSTR("B%02d%02d%02d.d%02d"),(sysdate->y - 20), sysdate->m, sysdate->d, write_restart);
+					 			openFile(filename,0,0);
+					 			SD_Status |= SD_MEASUREMENT;
+				 			}
+				 			Status |= MEASUREMENT;
 				 	//							old_m = Time.m;
-				 	LED_PORT.OUTSET = _BV(LED2);
+				 			LED_PORT.OUTSET = _BV(LED2);
 				 	case 0:	break;
 			 	}
 		 	}
