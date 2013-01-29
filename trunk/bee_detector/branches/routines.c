@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <inttypes.h>
 #include <avr/pgmspace.h>
@@ -8,6 +7,7 @@
 #include "include/routines.h"
 #include "include/FAT32.h"
 #include "include/rtc.h"
+#include "include/hw.h"
 
 
 //uint8_t readCfgFile(DATE *adate,TIME *atime, uint8_t *filename_dat, uint8_t atomic)
@@ -46,34 +46,55 @@ uint8_t readCfgFile(uint8_t *filename_dat, uint8_t atomic)
 				{
 					case	'S':
 								k++;
-								if(buffer[k]=='T')
-								{
-									k++;
-									time.h = getDec((uint8_t*)buffer+k);
-									//k +=2;
-									time.m = getDec((uint8_t*)buffer+k+2);
-									//k +=2;
-									time.s = getDec((uint8_t*)buffer+k+4);
-								}
-								else if(buffer[k]=='D')
-								{	
-									k++;
-									date.d = getDec(&buffer[k]);
-									//k +=2;
-									date.m = getDec(&buffer[k+2]);
-									//k +=2;
-									date.y = 20 + getDec(&buffer[k+4]);
-								}
-								else if(buffer[k]=='F')
-								{
-									k = k+2;
-									for(i=0;i<13;i++)
-									{
-										if(buffer[k+i] < 0x20)		//if any control code
-											break;
-										filename_dat[i] = buffer[k+i];
-									}
-									k = k+i;
+								switch(buffer[k])
+                {
+                  case 'T':
+                             k++;
+                             time.h = getDec((uint8_t*)buffer+k);
+                             time.m = getDec((uint8_t*)buffer+k+2);
+                             time.s = getDec((uint8_t*)buffer+k+4);
+                             break;
+                  case 'D':
+                             k++;
+                             date.d = getDec(&buffer[k]);
+									           date.m = getDec(&buffer[k+2]);
+                             date.y = 20 + getDec(&buffer[k+4]);
+                             break;
+								  case 'F':
+                             k = k+2;
+                             for(i=0;i<13;i++)
+                             {
+                                if(buffer[k+i] < 0x20)		//if any control code
+                                   break;
+                                filename_dat[i] = buffer[k+i];
+                             }
+                             k = k+i;
+                             break;
+                  case 'M':    //mask definitions: M - mic only, S - SHT sensor only, T - DS1820 1-wire sensor, X - Mic+SHT, '-' - nothing
+                             k++;
+                             for(i=0;i<13;i++)
+                             {
+                               Mask_DS = Mask_DS<<1;
+                               Mask_SHT = Mask_SHT<<1;
+                               Mask_MIC = Mask_MIC<<1;
+                               switch(buffer[k+i])
+                               {
+                                 case 'X':
+                                         Mask_SHT |= 0x01;
+                                 case 'M':
+                                         Mask_MIC |= 0x01;
+                                         break;
+                                 case 'S':
+                                         Mask_SHT |= 0x01;
+                                         break;
+                                 case 'T':
+                                         Mask_DS |= 0x01;
+                                         break;
+                                 default:
+                                         break;
+                               }
+                             }      
+                             k = k+i;
 								}
 								break;
 					case	'A':
