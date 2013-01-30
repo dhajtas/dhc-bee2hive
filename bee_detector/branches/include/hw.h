@@ -17,6 +17,7 @@
 
 extern volatile uint8_t Status;
 extern volatile uint8_t SD_Status;
+extern uint16_t Mask_MIC, Mask_SHT, Mask_DS;
 //extern volatile uint8_t COM_Status;
 
 #define BIGAVR				0
