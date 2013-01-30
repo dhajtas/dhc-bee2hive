@@ -13,6 +13,7 @@
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <avr/eeprom.h>
 
 #include "include/hw.h"
 #if RSCOM == 1
@@ -32,17 +33,19 @@ volatile uint8_t SD_Status;
 uint16_t Spectrum[FFT_N/2];
 complex_t Bfly_buffer[FFT_N];
 int16_t Signal[2][FFT_N];
+uint16_t Mask_MIC, Mask_SHT, Mask_DS;
 //volatile complex_t Bfly_buffer[FFT_N];
 //volatile int16_t Signal[2][FFT_N];
 
 uint8_t Resets __attribute__ ((section (".noinit")));
+uint16_t EE_cal[12] EEMEM;
 
 void Debug_Init(void);
 void CCPWrite(volatile uint8_t * address, uint8_t value);
 
 int main(void)
 {
- 	uint8_t x, save_count = 0, error = 0;
+ 	uint8_t x, save_count = 0, error = 0, pin0, pin1;
  	uint8_t write_restart = 0;
  	//	uint16_t i;
 
@@ -52,7 +55,11 @@ int main(void)
 
  	Status = 0;
  	Resets++;
-
+	Mask_MIC = 0;
+	Mask_SHT = 0;
+	Mask_DS  = 0;
+	
+	
  	CCPWrite(&PMIC.CTRL, 0x00);			// make sure IVSEL is zero - interrupts in application section
  	CCPWrite(&WDT.CTRL, 0x29);				// make sure WDT is disabled, timeout 8s (0x28+0x01(CEN))
  	CCPWrite(&WDT.WINCTRL, 0x29);			// make sure windowWDT is disabled, timeout 8s (0x28+0x01(CEN))
@@ -103,8 +110,6 @@ int main(void)
 		while(!(ADC_Status & ADC0_FINISHED));
 		ADC_Cal[x*2] = ADC_cal(0);
 		ADC_Status &= ~ADC0_FINISHED;
-		while(!(ADC_Status & ADC1_FINISHED));
-//		ADCA.CTRLB &= ~ADC_FREERUN_bm;						//disable freerunning... (if in freerunning mode) should be disabled in ADC_INT1
 		ADC_Cal[x*2+1] = ADC_cal(1); 
 		ADC_Status &= ~ADC1_FINISHED;
 		while(!(ADCA.INTFLAGS));	//???					// test if pending conversion is finished...
@@ -114,10 +119,11 @@ int main(void)
 		{
 			ADCA.CH1.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;		// enable interrupt & free running mode
 			ADCA.CTRLB |= ADC_FREERUN_bm;						//enable freerunning... (if in freerunning mode)
-//			ADCA.CTRLA |= ADC_CH0START_bm || ADC_CH1START_bm;	// start the conversion
 		}		
 	}
-			
+	
+	eeprom_write_block(ADC_Cal, EE_cal, 24);
+*/			
  	LED_PORT.OUTCLR = _BV(LED2);
  	
  	x = 0;
@@ -140,37 +146,37 @@ int main(void)
 		 	switch(error)
 		 	{
 			 	case 	0:
-			 	if(readCfgFile(filename,0))
-			 	{
-				 	#if RSCOM == 1
-				 	printf_P(PSTR("NEW CFG LOADED"));
-				 	#endif
-				 	Resets = 0;
-			 	}
-			 	#if RSCOM == 1
-			 	else
-			 	{
-				 	printf_P(PSTR("No config detected"));
-				 	printf_P(PSTR("OLD CFG USED"));
-			 	}
-			 	#endif
-			 	LED_PORT.OUTSET = _BV(LED1);
-			 	SD_Status |= SD_READY | SD_FS_READY;
-			 	break;
+			 				if(readCfgFile(filename,0))
+			 				{
+#if RSCOM == 1
+				 				printf_P(PSTR("NEW CFG LOADED"));
+#endif
+				 				Resets = 0;
+			 				}
+#if RSCOM == 1
+			 				else
+			 				{
+				 				printf_P(PSTR("No config detected"));
+				 				printf_P(PSTR("OLD CFG USED"));
+			 				}
+#endif
+			 				LED_PORT.OUTSET = _BV(LED1);
+			 				SD_Status |= SD_READY | SD_FS_READY;
+			 				break;
 
 			 	case	1:
-			 	#if RSCOM == 1
-			 	printf_P(PSTR("No SD card detected"));
-			 	printf_P(PSTR("OLD CFG USED"));
-			 	#endif
-			 	SD_Status |= SD_ERROR;
-			 	break;
+#if RSCOM == 1
+			 				printf_P(PSTR("No SD card detected"));
+			 				printf_P(PSTR("OLD CFG USED"));
+#endif
+			 				SD_Status |= SD_ERROR;
+			 				break;
 			 	case	2:
-			 	#if RSCOM == 1
-			 	printf_P(PSTR("No FAT32 detected"));
-			 	printf_P(PSTR("OLD CFG USED"));
-			 	#endif
-			 	SD_Status |= SD_READY;
+#if RSCOM == 1
+			 				printf_P(PSTR("No FAT32 detected"));
+			 				printf_P(PSTR("OLD CFG USED"));
+#endif
+			 				SD_Status |= SD_READY;
 			 	default:	break;
 		 	}
 
@@ -196,7 +202,7 @@ int main(void)
 	 	}
 
 	 	
-	 	if(ADC_Status & ADC1_FINISHED)	//merat kontinualne, kazdu minutu ulozit 25 merani - pri 24h vydrzi karta 100dni
+	 	if(ADC_Status & ADC0_FINISHED)	//merat kontinualne, kazdu minutu ulozit 25 merani - pri 24h vydrzi karta 100dni
 	 	{
 		 	if(SD_Status & SD_WRITE)
 		 	{
@@ -216,6 +222,7 @@ int main(void)
 		 				FFT_Output(Bfly_buffer,Spectrum);
 					 	writeSpectrum(0,FFT_N/2,Spectrum,0);
 					 	save_count++;
+						 
 					 	FFT_Input(&Signal[1][0], Bfly_buffer);
 					 	FFT_Execute(Bfly_buffer);
 					 	FFT_Output(Bfly_buffer,Spectrum);
@@ -239,9 +246,9 @@ int main(void)
 	 		ADCA.INTFLAGS = 0xFF;								// clear any int flags
 //		 	ADCA.CH0.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;
 		 	ADCA.CH1.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;	// INT len na kanale 1
+		 	ADCA.CTRLB |= ADC_FREERUN_bm;									 		//enable freerunning... (if in freerunning mode)
 //		 	ADCA.CH0.CTRL |= ADC_CH_START_bm;					// Start first conversion...
 //			ADCA.CTRLA |= ADC_CH0START_bm || ADC_CH1START_bm;	// start the conversion
-		 	ADCA.CTRLB |= ADC_FREERUN_bm;									 		//enable freerunning... (if in freerunning mode)
 	 	}
 	 	
 	 	if(Status & RTC_UPDATE)
