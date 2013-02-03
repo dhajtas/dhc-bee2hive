@@ -152,3 +152,25 @@ uint8_t getDec(uint8_t *data)
 	out = ((uint8_t)*data-0x30)*10+((uint8_t)*(data+1)-0x30);
 	return(out);
 }
+
+int8_t search_mask(int8_t previous,uint16_t mask)
+{
+	uint8_t i;
+	if(previous == 11)
+		previous = -1;
+	for (i=previous+1;i<12;i++)
+	{
+		if((mask>>i)&0x0001)
+			return(i);
+	}
+	if (previous > -1)
+	{
+		for (i=0;i<(previous+1);i++)
+		{
+			if((mask>>i)&0x0001)
+			return(i);
+		}
+	}	
+	return(-1);
+}
+

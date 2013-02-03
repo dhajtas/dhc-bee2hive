@@ -8,4 +8,6 @@ uint8_t readCfgFile(uint8_t *filename, uint8_t atomic);
 
 uint8_t getDec(uint8_t *data);
 
+int8_t search_mask(int8_t previous,uint16_t mask);
+
 #endif //_ROUTINES_H_
