@@ -228,13 +228,18 @@ int main(void)
 					 	FFT_Output(Bfly_buffer,Spectrum);
 					 	writeSpectrum(0,FFT_N/2,Spectrum,0);
 					 	save_count++;
-//						ADC_chswitch();			//zatial neprepinat kanaly, merat len 0,1
+						pin0 = search_mask(pin1,Mask_MIC);
+						pin1 = search_mask(pin0,Mask_MIC);
+						ADC_chswitch(pin0,pin1);			
 				 	}
 				 	else
 				 	{
 					 	save_count = 0;
 					 	SD_Status &= ~SD_WRITE;
-					 	LED_PORT.OUTCLR = _BV(LED0);		//led off
+					 	LED_PORT.OUTCLR = _BV(LED0);					//led off
+						pin0 = search_mask(11,Mask_MIC);				//najdi prvy kanal na meranie - nasledujuca skupina merani zacina opat od zaciatku
+						pin1 = search_mask(pin0,Mask_MIC);				//najdi nasledujuci kanal na meranie
+						ADC_chswitch(pin0,pin1);						//prepni vstupy ADC
 				 	}
 			 	}
 		 	}
