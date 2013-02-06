@@ -107,6 +107,7 @@ uint8_t ADC_chswitch(uint8_t channel0, uint8_t channel1)
 	return(ADC_CH0_PIN | (ADC_CH1_PIN<<4));
 }
 
+
 void ADC_Init(void)
 {
 	uint8_t ii=0;
