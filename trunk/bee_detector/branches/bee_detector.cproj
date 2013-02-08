@@ -92,37 +92,45 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <ToolchainSettings>
       <AvrGcc>
-  <avrgcc.common.outputfiles.hex>True</avrgcc.common.outputfiles.hex>
-  <avrgcc.common.outputfiles.lss>True</avrgcc.common.outputfiles.lss>
-  <avrgcc.common.outputfiles.eep>True</avrgcc.common.outputfiles.eep>
-  <avrgcc.common.outputfiles.srec>True</avrgcc.common.outputfiles.srec>
-  <avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>True</avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>
-  <avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>True</avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>
-  <avrgcc.compiler.directories.IncludePaths>
-    <ListValues>
-      <Value>../../Common_libs</Value>
-    </ListValues>
-  </avrgcc.compiler.directories.IncludePaths>
-  <avrgcc.compiler.optimization.level>Optimize (-O1)</avrgcc.compiler.optimization.level>
-  <avrgcc.compiler.optimization.PackStructureMembers>True</avrgcc.compiler.optimization.PackStructureMembers>
-  <avrgcc.compiler.optimization.AllocateBytesNeededForEnum>True</avrgcc.compiler.optimization.AllocateBytesNeededForEnum>
-  <avrgcc.compiler.optimization.DebugLevel>Default (-g2)</avrgcc.compiler.optimization.DebugLevel>
-  <avrgcc.compiler.warnings.AllWarnings>True</avrgcc.compiler.warnings.AllWarnings>
-  <avrgcc.linker.libraries.Libraries>
-    <ListValues>
-      <Value>m</Value>
-    </ListValues>
-  </avrgcc.linker.libraries.Libraries>
-  <avrgcc.assembler.debugging.DebugLevel>Default (-Wa,-g)</avrgcc.assembler.debugging.DebugLevel>
-</AvrGcc>
+        <avrgcc.common.outputfiles.hex>True</avrgcc.common.outputfiles.hex>
+        <avrgcc.common.outputfiles.lss>True</avrgcc.common.outputfiles.lss>
+        <avrgcc.common.outputfiles.eep>True</avrgcc.common.outputfiles.eep>
+        <avrgcc.common.outputfiles.srec>True</avrgcc.common.outputfiles.srec>
+        <avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>True</avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>
+        <avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>True</avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>
+        <avrgcc.compiler.directories.IncludePaths>
+          <ListValues>
+            <Value>../../Common_libs</Value>
+          </ListValues>
+        </avrgcc.compiler.directories.IncludePaths>
+        <avrgcc.compiler.optimization.level>Optimize (-O1)</avrgcc.compiler.optimization.level>
+        <avrgcc.compiler.optimization.PackStructureMembers>True</avrgcc.compiler.optimization.PackStructureMembers>
+        <avrgcc.compiler.optimization.AllocateBytesNeededForEnum>True</avrgcc.compiler.optimization.AllocateBytesNeededForEnum>
+        <avrgcc.compiler.optimization.DebugLevel>Default (-g2)</avrgcc.compiler.optimization.DebugLevel>
+        <avrgcc.compiler.warnings.AllWarnings>True</avrgcc.compiler.warnings.AllWarnings>
+        <avrgcc.linker.libraries.Libraries>
+          <ListValues>
+            <Value>m</Value>
+          </ListValues>
+        </avrgcc.linker.libraries.Libraries>
+        <avrgcc.assembler.debugging.DebugLevel>Default (-Wa,-g)</avrgcc.assembler.debugging.DebugLevel>
+      </AvrGcc>
     </ToolchainSettings>
     <OutputFileName>bee_detector</OutputFileName>
     <OutputFileExtension>.elf</OutputFileExtension>
     <OutputType>Executable</OutputType>
     <UsesExternalMakeFile>False</UsesExternalMakeFile>
     <ExternalMakeFilePath>z:\kicad\work\Bee_detector\SW_xmega_studio\bee_detector\Makefile</ExternalMakeFilePath>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="1wire.c">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="1wire_02.c">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="adc.c">
       <SubType>compile</SubType>
     </Compile>
@@ -132,16 +140,25 @@
     <None Include="dma_driver.c">
       <SubType>compile</SubType>
     </None>
+    <None Include="ds1820.c">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="FAT32.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="ffft.S">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="include\1wire.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="include\adc.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\dma_driver.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\ds1820.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\FAT32.h">
@@ -156,10 +173,16 @@
     <Compile Include="include\routines.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="include\rsc.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="include\rtc.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\sd_routines.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\sht1x.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\spi.h">
@@ -168,15 +191,18 @@
     <Compile Include="routines.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtc.c">
+    <None Include="rscom0.c">
       <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="rtc.h">
+    </None>
+    <Compile Include="rtc.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="SD_routines.c">
       <SubType>compile</SubType>
     </Compile>
+    <None Include="sht1x.c">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="spi.c">
       <SubType>compile</SubType>
     </Compile>
