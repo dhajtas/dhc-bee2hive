@@ -88,6 +88,16 @@ extern uint16_t Mask_MIC, Mask_SHT, Mask_DS;
 
 #define RTC_INT				RTC_OVF_vect 
 
+#define SDA0				PIN0_bm
+#define SDA1				PIN2_bm
+#define SDA2				PIN3_bm
+#define SDA3				PIN4_bm
+#define SDA4				PIN5_bm
+#define SDA5				PIN7_bm
+#define SCL0				PIN1_bm
+#define SCL1				PIN6_bm
+#define I2C_P				C
+
 #define RS485_POWER			PIN0
 #define RS485_POWER_PORT	PORTE
 
