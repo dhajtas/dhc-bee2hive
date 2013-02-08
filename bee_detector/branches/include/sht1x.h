@@ -11,6 +11,10 @@
 //#define		DDRDIO		DDRA
 //#define		PINDIO		PINA
 
+#define		SHT_PORT		PORT(I2C_P)
+#define		SDA_bm			SDA0|SDA1|SDA2|SDA3|SDA4|SDA5
+#define		SCL_bm			SCL0|SCL1
+
 #define		SHT_MEAS_TEMP	0x03
 #define		SHT_MEAS_HUM	0x05
 #define 	SHT_READ_STAT	0x07

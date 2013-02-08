@@ -1,8 +1,8 @@
 #include <avr/io.h>
 #include <inttypes.h>
 
-#include "1wire.h"
-#include "data_max.h"
+//#include "1wire.h"
+#include "hw.h"
 #include "sht1x.h"
 
 
@@ -207,84 +207,36 @@ uint8_t SHT_rcv8_t(uint8_t y, uint8_t ack)		//ack = 1 - no ACK, terminate comm; 
 
 void SHT_TRX_start(uint8_t y)
 {
+
+	SHT_PORT.DIR |= SDA_bm;
 	switch(y)
 	{
-#ifdef DS_3
 		case 0x00:
-		//	PORTF |= 0x01; 	// DATA 1, pull-up
-			DDRE  |= 0x04;	// DATA outport  PE3
-			PORTE |= 0x02;	// CLK hi        PE2
-			delay_us(1);	// wait 1us
-			PORTE &= 0xFB;	// DATA lo
-			delay_us(1);	// wait 1us
-			PORTE &= 0xFD;	// CLK lo
-			delay_us(4);	// wait 2us
-			PORTE |= 0x02;	// CLK hi
-			delay_us(1);	// wait 1us
-			PORTE |= 0x04;	// DATA hi
-			delay_us(1);	// wait 1us
-			PORTE &= 0xFD;	// CLK lo
-			break;
+				SHT_PORT.OUTSET = SCL0;		//clk Hi
+				delay_us(1);	// wait 1us
+				SHT_PORT.OUTCLR = SDA_bm;	// data lo
+				delay_us(1);	// wait 1us
+				SHT_PORT.OUTCLR = SCL0;		// clk lo
+				delay_us(4);	// wait 2us
+				SHT_PORT.OUTSET = SCL0;		//clk hi
+				delay_us(1);	// wait 1us
+				SHT_PORT.OUTSET = SDA_bm;	// data hi
+				delay_us(1);	// wait 1us
+				SHT_PORT.OUTCLR = SCL0;		// clk lo
+				break;
 		case 0x01:
-#else
-		case 0x00:	
-		//	PORTF |= 0x01; 	// DATA 1, pull-up
-			DDRF  |= 0x01;	// DATA outport
-			PORTF |= 0x08;	// CLK hi
-			delay_us(1);	// wait 1us
-			PORTF &= 0xFE;	// DATA lo
-			delay_us(1);	// wait 1us
-			PORTF &= 0xF7;	// CLK lo
-			delay_us(4);	// wait 2us
-			PORTF |= 0x08;	// CLK hi
-			delay_us(1);	// wait 1us
-			PORTF |= 0x01;	// DATA hi
-			delay_us(1);	// wait 1us
-			PORTF &= 0xF7;	// CLK lo
-			break;
-		case 0x01:
-			DDRF  |= 0x10;	// DATA outport
-			PORTB |= 0x80;	// CLK hi
-			delay_us(1);	// wait 1us
-			PORTF &= 0xEF;	// DATA lo
-			delay_us(1);	// wait 1us
-			PORTB &= 0x7F;	// CLK lo
-			delay_us(4);	// wait 2us
-			PORTB |= 0x80;	// CLK hi
-			delay_us(1);	// wait 1us
-			PORTF |= 0x10;	// DATA hi
-			delay_us(1);	// wait 1us
-			PORTB &= 0x7F;	// CLK lo
-#endif  //DS_3
-			break;
-		case 0x02:	
-			DDRA  |= 0x01;	// DATA outport
-			PORTA |= 0x08;	// CLK hi
-			delay_us(1);	// wait 1us
-			PORTA &= 0xFE;	// DATA lo
-			delay_us(1);	// wait 1us
-			PORTA &= 0xF7;	// CLK lo
-			delay_us(4);	// wait 2us
-			PORTA |= 0x08;	// CLK hi
-			delay_us(1);	// wait 1us
-			PORTA |= 0x01;	// DATA hi
-			delay_us(1);	// wait 1us
-			PORTA &= 0xF7;	// CLK lo
-			break;
-		case 0x03:	
-			DDRA  |= 0x10;	// DATA outport
-			PORTA |= 0x80;	// CLK hi
-			delay_us(1);	// wait 1us
-			PORTA &= 0xEF;	// DATA lo
-			delay_us(1);	// wait 1us
-			PORTA &= 0x7F;	// CLK lo
-			delay_us(4);	// wait 2us
-			PORTA |= 0x80;	// CLK hi
-			delay_us(1);	// wait 1us
-			PORTA |= 0x10;	// DATA hi
-			delay_us(1);	// wait 1us
-			PORTA &= 0x7F;	// CLK lo
-			break;
+				SHT_PORT.OUTSET = SCL1;		//clk Hi
+				delay_us(1);	// wait 1us
+				SHT_PORT.OUTCLR = SDA_bm;	// data lo
+				delay_us(1);	// wait 1us
+				SHT_PORT.OUTCLR = SCL1;		// clk lo
+				delay_us(4);	// wait 2us
+				SHT_PORT.OUTSET = SCL1;		//clk hi
+				delay_us(1);	// wait 1us
+				SHT_PORT.OUTSET = SDA_bm;	// data hi
+				delay_us(1);	// wait 1us
+				SHT_PORT.OUTCLR = SCL1;		// clk lo
+				break;
 	}
 	return;
 }
@@ -293,82 +245,35 @@ void SHT_TRX_start(uint8_t y)
 
 void SHT_send_bit(uint8_t data, uint8_t y)
 {
+	if(!(data))
+	{
+		SHT_PORT.OUTCLR = SDA_bm;		// DATA lo
+	}
+	else
+	{
+		SHT_PORT.OUTSET = SDA_bm;		// DATA hi
+	}
+	SHT_clk(y);
+	return;
+}
+
+//------------------------------------------------------------------------------
+
+void SHT_clk(uint8_t y)
+{
+	delay_us(2);
 	switch(y)
 	{
-#ifdef  DS_3
 		case 0x00:
-			if(!(data))
-			{
-				PORTE &= 0xFB;		// DATA lo
-			}
-			else
-			{
-				PORTE |= 0x04;		// DATA hi
-			}
-			delay_us(1);	// wait 1us
-			PORTE |= 0x02;	// CLK hi
-			delay_us(2);	// wait 1us
-			PORTE &= 0xFD;	// CLK lo
-			break;
+				SHT_PORT.OUTSET = SCL0;	// CLK hi
+				delay_us(2);			// wait 1us
+				SHT_PORT.OUTCLR = SCL0;	// CLK lo
+				break;
 		case 0x01:
-#else
-		case 0x00:
-			if(!(data))
-			{
-				PORTF &= 0xFE;		// DATA lo
-			}
-			else
-			{
-				PORTF |= 0x01;		// DATA hi
-			}
-			delay_us(1);	// wait 1us
-			PORTF |= 0x08;	// CLK hi
-			delay_us(2);	// wait 1us
-			PORTF &= 0xF7;	// CLK lo
-			break;
-		case 0x01:
-			if(!(data))
-			{
-				PORTF &= 0xEF;		// DATA lo
-			}
-			else
-			{
-				PORTF |= 0x10;		// DATA hi
-			}
-			delay_us(1);	// wait 1us
-			PORTB |= 0x80;	// CLK hi
-			delay_us(2);	// wait 1us
-			PORTB &= 0x7F;	// CLK lo
-#endif  //DS_3
-			break;
-		case 0x02:
-			if(!(data))
-			{
-				PORTA &= 0xFE;		// DATA lo
-			}
-			else
-			{
-				PORTA |= 0x01;		// DATA hi
-			}
-			delay_us(1);	// wait 1us
-			PORTA |= 0x08;	// CLK hi
-			delay_us(2);	// wait 1us
-			PORTA &= 0xF7;	// CLK lo
-			break;
-		case 0x03:
-			if(!(data))
-			{
-				PORTA &= 0xEF;		// DATA lo
-			}
-			else
-			{
-				PORTA |= 0x10;		// DATA hi
-			}
-			delay_us(1);	// wait 1us
-			PORTA |= 0x80;	// CLK hi
-			delay_us(2);	// wait 1us
-			PORTA &= 0x7F;	// CLK lo
-			break;
+				SHT_PORT.OUTSET = SCL1;	// CLK hi
+				delay_us(2);			// wait 1us
+				SHT_PORT.OUTCLR = SCL1;	// CLK lo
+				break;
 	}
 	return;
 }
@@ -543,49 +448,8 @@ void SHT_init(void)
 	return;
 }
 
-//------------------------------------------------------------------------------
 
-void SHT_clk(uint8_t y)
-{
-	switch(y)
-	{
-#ifdef DS_3
-		case 0x00:
-			delay_us(2);	// wait 2us
-			PORTE |= 0x02;	// CLK hi
-			delay_us(2);	// wait 2us
-			PORTE &= 0xFD;	// CLK lo
-			break;
-		case 0x01:
-#else
-		case 0x00:
-			delay_us(2);	// wait 2us
-			PORTF |= 0x08;	// CLK hi
-			delay_us(2);	// wait 2us
-			PORTF &= 0xF7;	// CLK lo
-			break;
-		case 0x01:
-			delay_us(2);	// wait 2us
-			PORTB |= 0x80;	// CLK hi
-			delay_us(2);	// wait 2us
-			PORTB &= 0x7F;	// CLK lo
-#endif  //DS_3
-			break;
-		case 0x02:
-			delay_us(2);	// wait 2us
-			PORTA |= 0x08;	// CLK hi
-			delay_us(2);	// wait 2us
-			PORTA &= 0xF7;	// CLK lo
-			break;
-		case 0x03:
-			delay_us(2);	// wait 2us
-			PORTA |= 0x80;	// CLK hi
-			delay_us(2);	// wait 2us
-			PORTA &= 0x7F;	// CLK lo
-			break;
-	}
-	return;
-}
+
 
 //------------------------------------------------------------------------------
 
