@@ -286,59 +286,19 @@ uint8_t SHT_rcv_bit(uint8_t y)
 	
 	switch(y)
 	{
-#ifdef DS_3
 		case 0x00:
 			delay_us(5);	// wait 1us
-			PORTE |= 0x02;	// CLK hi
-			if(PINE & 0x04)	// if DATA hi
-			{
-				data = 0x01;
-			}
+			SHT_PORT.OUTSET = SCL0;	// CLK hi
+			data = SHT_PORT.IN & SDA_bm
 			delay_us(2);	// wait 1us
-			PORTE &= 0xFD;	// CLK lo
-			break;
-		case 0x01:
-#else
-		case 0x00:
-			delay_us(5);	// wait 1us
-			PORTF |= 0x08;	// CLK hi
-			if(PINF & 0x01)	// if DATA hi
-			{
-				data = 0x01;		
-			}
-			delay_us(2);	// wait 1us
-			PORTF &= 0xF7;	// CLK lo
+			SHT_PORT.OUTCLR = SCL0;	// CLK lo
 			break;
 		case 0x01:
 			delay_us(5);	// wait 1us
-			PORTB |= 0x80;	// CLK hi
-			if(PINF & 0x10)	// if DATA hi
-			{
-				data = 0x01;		
-			}
+			SHT_PORT.OUTSET = SCL1;	// CLK hi
+			data = SHT_PORT.IN & SDA_bm
 			delay_us(2);	// wait 1us
-			PORTB &= 0x7F;	// CLK lo
-#endif  //DS_3
-			break;
-		case 0x02:
-			delay_us(5);	// wait 1us
-			PORTA |= 0x08;	// CLK hi
-			if(PINA & 0x01)	// if DATA hi
-			{
-				data = 0x01;
-			}
-			delay_us(2);	// wait 1us
-			PORTA &= 0xF7;	// CLK lo
-			break;
-		case 0x03:
-			delay_us(5);	// wait 1us
-			PORTA |= 0x80;	// CLK hi
-			if(PINA & 0x10)	// if DATA hi
-			{
-				data = 0x01;		
-			}
-			delay_us(2);	// wait 1us
-			PORTA &= 0x7F;	// CLK lo
+			SHT_PORT.OUTCLR = SCL1;	// CLK lo
 			break;
 	}
 	return(data);
