@@ -202,7 +202,7 @@ int main(void)
 	 	}
 
 	 	
-	 	if(ADC_Status & ADC0_FINISHED)	//merat kontinualne, kazdu minutu ulozit 25 merani - pri 24h vydrzi karta 100dni
+	 	if(ADC_Status & ADC0_FINISHED)	//merat kontinualne, kazdu minutu ulozit 2x12 merani (vsetky vstupy 2x) - pri 24h vydrzi karta 100dni
 	 	{
 		 	if(SD_Status & SD_WRITE)
 		 	{
@@ -215,7 +215,7 @@ int main(void)
 					 	openFile(filename,0,0);
 					 	SD_Status |= SD_MEASUREMENT;
 				 	}
-				 	if(save_count < 32)		//32 zapisov pri 128 prvkoch * 2B = 16 sektorov = 2 clustre
+				 	if(save_count < 24)		//24 zapisov pri 128 prvkoch * 2B = 12 sektorov = necele 2 clustre (4 x 512 bytov chyba do 2 clustrov)
 				 	{
 					 	FFT_Input(&Signal[0][0], Bfly_buffer);
 						FFT_Execute(Bfly_buffer);
@@ -237,9 +237,11 @@ int main(void)
 					 	save_count = 0;
 					 	SD_Status &= ~SD_WRITE;
 					 	LED_PORT.OUTCLR = _BV(LED0);					//led off
-						pin0 = search_mask(11,Mask_MIC);				//najdi prvy kanal na meranie - nasledujuca skupina merani zacina opat od zaciatku
-						pin1 = search_mask(pin0,Mask_MIC);				//najdi nasledujuci kanal na meranie
-						ADC_chswitch(pin0,pin1);						//prepni vstupy ADC
+//						pin0 = search_mask(11,Mask_MIC);				//najdi prvy kanal na meranie - nasledujuca skupina merani zacina opat od zaciatku
+//						pin1 = search_mask(pin0,Mask_MIC);				//najdi nasledujuci kanal na meranie
+//						ADC_chswitch(pin0,pin1);						//prepni vstupy ADC
+						ADC_chswitch(0,1);								//prepni vstupy ADC
+						// meraj SHT a DS1820 (ukladaj vsetky, konverziu kontroluj podla masky...)
 				 	}
 			 	}
 		 	}

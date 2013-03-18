@@ -157,20 +157,28 @@ int8_t search_mask(int8_t previous,uint16_t mask)
 {
 	uint8_t i;
 	if(previous == 11)
-		previous = -1;
-	for (i=previous+1;i<12;i++)
 	{
-		if((mask>>i)&0x0001)
-			return(i);
+		i = 0;
 	}
-	if (previous > -1)
+	else
 	{
-		for (i=0;i<(previous+1);i++)
-		{
-			if((mask>>i)&0x0001)
-			return(i);
-		}
-	}	
-	return(-1);
+		i = previous + 1;
+	}
+	return(i);
+//		previous = -1;
+//	for (i=previous+1;i<12;i++)
+//	{
+//		if((mask>>i)&0x0001)
+//			return(i);
+//	}
+//	if (previous > -1)
+//	{
+//		for (i=0;i<(previous+1);i++)
+//		{
+//			if((mask>>i)&0x0001)
+//			return(i);
+//		}
+//	}	
+//	return(-1);
 }
 
