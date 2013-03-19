@@ -330,26 +330,13 @@ uint8_t SHT_rcv_ack(uint8_t y)
 
 void SHT_wait(uint8_t y)
 {
-	switch(y)
+	switch(y)	// SHT ktore nie su by nemali byt kontrolovane! - data budu stale High...(zabezpecit v inite alebo tu?)
 	{
-#ifdef DS_3
 		case 0x00:
-			while(PINE & 0x04);	// if DATA hi
+			while(SHT_PORT.IN & Mask_SHT0);	// if DATA hi
 			break;
 		case 0x01:
-#else
-		case 0x00:
-			while(PINF & 0x01);	// if DATA hi
-			break;
-		case 0x01:
-			while(PINF & 0x10);	// if DATA hi
-#endif  //DS_3
-			break;
-		case 0x02:
-			while(PINA & 0x01);	// if DATA hi
-			break;
-		case 0x03:
-			while(PINA & 0x10);	// if DATA hi
+			while(SHT_PORT.IN & Mask_SHT1);	// if DATA hi
 			break;
 	}
 	return;
@@ -362,47 +349,13 @@ void SHT_init(void)
 	uint16_t msk = mask.SHTM;
 	if(msk && 0x0001)
 
-#ifdef DS_#
 	{
-		DDRE  |= 0x04;			//pull up + input for data,
-		DDRE  &= 0xFD;			//out 0 for SCK
-		PORTE &= 0xFB;
-		PORTE |= 0x02;
+		SHT_PORT.DIR  |= SDA_bm;		//pull up + input for data,
+		SHT_PORT.DIR  &= ~SCL_bm;		//out 0 for SCK
+		SHT_PORT.OUTCLR = SCL_bm;
+		SHT_PORT.PULL |= 0x02;
 	}
 	msk >>= 4;
-#else
- 	{
-		DDRF  |= 0x08;			//pull up + input for data, 
-		DDRF  &= 0xFE;			//out 0 for SCK
-		PORTF &= 0xF7;
-		PORTF |= 0x01;
-	}
-	msk >>= 4;
-	if(msk && 0x0001)
-	{
-		DDRF  &= 0xEF;			//pull up + input for data
-		PORTF |= 0x10;
-		DDRB  |= 0x80;		//0 + output for SCK
-		PORTB &= 0x7F;
-	}
-#endif  //DS_3
-
-	msk >>= 4;
-	if(msk && 0x0001)
-	{
-		DDRA  |= 0x08;			//pull up + input for data
-		DDRA  &= 0xFE;			//out 0 for SCK
-		PORTA &= 0xF7;
-		PORTA |= 0x01;
-	}
-	msk >>= 4;
-	if(msk && 0x0001)
-	{
-		DDRA  |= 0x80;			//pull up + output for SCK & data
-		DDRA  &= 0xEF;			//out 0 for SCK
-		PORTA &= 0x7F;
-		PORTA |= 0x10;
-	}
 	DELAY_MS(20);
 	SHT_reset();
 	return;
@@ -414,7 +367,7 @@ void SHT_init(void)
 //------------------------------------------------------------------------------
 
 void SHT_sw_data_dir(uint8_t y, uint8_t dir)
-{
+{	//podla masky - SHT, ktore nemeraju by mali byt LO?
 	switch(y)
 	{
 #ifdef DS_3
