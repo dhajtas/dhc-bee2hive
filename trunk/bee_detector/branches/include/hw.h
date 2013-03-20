@@ -9,6 +9,14 @@
 	#define UART(x)        GLUE(UART, x)
 #endif	//GLUE
 
+typedef struct MASK_struct {
+	uint16_t MIC;
+	uint16_t SHT;
+	uint8_t SHT0_bm;
+	uint8_t SHT1_bm;
+	uint16_t DS;
+}, MASK_t;
+
 #define AVR_ENTER_CRITICAL_REGION( ) uint8_t volatile saved_sreg = SREG; \
                                      cli();
 
@@ -17,7 +25,7 @@
 
 extern volatile uint8_t Status;
 extern volatile uint8_t SD_Status;
-extern uint16_t Mask_MIC, Mask_SHT, Mask_DS;
+extern MASK_t Mask;
 //extern volatile uint8_t COM_Status;
 
 #define BIGAVR				0
