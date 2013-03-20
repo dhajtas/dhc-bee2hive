@@ -15,8 +15,8 @@ uint8_t readCfgFile(uint8_t *filename_dat, uint8_t atomic)
 {
 	DIR *dir;
 	uint32_t cluster, fileSize, firstSector;
-	uint16_t k;
-	uint8_t i,j,ld,lt;
+	uint16_t k,mask;
+	uint8_t i,j,ld,lt,mask_bm;
 	uint8_t filename[]="CONFIG  CFG";
 	uint8_t filename2[]="_CONFIG CFG";
 	
@@ -74,21 +74,21 @@ uint8_t readCfgFile(uint8_t *filename_dat, uint8_t atomic)
                              k++;
                              for(i=0;i<13;i++)
                              {
-                               Mask_DS = Mask_DS<<1;
-                               Mask_SHT = Mask_SHT<<1;
-                               Mask_MIC = Mask_MIC<<1;
+                               Mask.DS = Mask.DS<<1;
+                               Mask.SHT = Mask.SHT<<1;
+                               Mask.MIC = Mask.MIC<<1;
                                switch(buffer[k+i])
                                {
                                  case 'X':
-                                         Mask_SHT |= 0x01;
+                                         Mask.SHT |= 0x0001;
                                  case 'M':
-                                         Mask_MIC |= 0x01;
+                                         Mask.MIC |= 0x0001;
                                          break;
                                  case 'S':
-                                         Mask_SHT |= 0x01;
+                                         Mask.SHT |= 0x0001;
                                          break;
                                  case 'T':
-                                         Mask_DS |= 0x01;
+                                         Mask.DS |= 0x0001;
                                          break;
                                  default:
                                          break;
@@ -97,7 +97,7 @@ uint8_t readCfgFile(uint8_t *filename_dat, uint8_t atomic)
                              k = k+i;
 								}
 								break;
-					case	'A':
+					case 'A':
 								k++;
 								if(buffer[k]=='D')
 								{	
@@ -127,6 +127,37 @@ uint8_t readCfgFile(uint8_t *filename_dat, uint8_t atomic)
 				{
 					findFiles(RENAME,filename, filename2, atomic);
 					RTC_SetDateTime(&date, &time);
+//??				if(Mask.SHT)
+//					{
+						mask = Mask.SHT;
+						for(i=0;i<12;i++)
+						{
+							switch(i)
+							{
+								case 6:
+									Mask.SHT0_bm = mask_bm;
+								case 0:
+									mask_bm = 0;
+									break;
+								case 1:
+								case 5:
+								case 7:
+								case 11:
+									mask_bm = mask_bm >> 1;
+									break;
+								default : break;			
+							}
+
+							mask_bm = mask_bm >> 1;
+				
+							if(mask & 0x0001)
+							{
+								mask_bm |= 0x80;
+							}										
+							mask = mask >> 1;	
+						}					
+						Mask.SHT1_bm = mask_bm		
+//					}
 					return(lt);
 				}
 			}
