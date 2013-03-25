@@ -10,4 +10,6 @@ uint8_t getDec(uint8_t *data);
 
 int8_t search_mask(int8_t previous,uint16_t mask);
 
+void generate_mask_bm(void);
+
 #endif //_ROUTINES_H_

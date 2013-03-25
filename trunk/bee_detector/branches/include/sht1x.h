@@ -25,19 +25,19 @@
 //		structure definitions 
 //-----------------------------------------------------------------------------------------------//
 
-typedef struct SHT
+typedef struct SHT_struct
 {
 	uint16_t TEMP;
 	uint16_t HUM;
 	uint8_t STATUS;
-} SHT;
+} SHT_t;
 
 //-----------------------------------------------------------------------------------------------//
 //		Global variables
 //-----------------------------------------------------------------------------------------------//
 
 //extern uint8_t SHTmask;		mask.SHTM instead
-extern SHT SHTbuff[4];
+extern SHT_t SHTbuff[12];
 
 
 //-----------------------------------------------------------------------------------------------//
@@ -58,7 +58,7 @@ void SHT_connection_reset(uint8_t);
 
 uint8_t SHT_send8_t(uint8_t,uint8_t);
 
-uint8_t SHT_rcv8_t(uint8_t, uint8_t);
+uint8_t SHT_rcv8_t(uint8_t, uint8_t, uint8_t*);
 
 void SHT_TRX_start(uint8_t);
 

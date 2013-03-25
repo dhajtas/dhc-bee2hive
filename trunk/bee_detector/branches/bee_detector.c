@@ -33,7 +33,8 @@ volatile uint8_t SD_Status;
 uint16_t Spectrum[FFT_N/2];
 complex_t Bfly_buffer[FFT_N];
 int16_t Signal[2][FFT_N];
-uint16_t Mask_MIC, Mask_SHT, Mask_DS;
+//uint16_t Mask_MIC, Mask_SHT, Mask_DS;
+MASK_t Mask;
 //volatile complex_t Bfly_buffer[FFT_N];
 //volatile int16_t Signal[2][FFT_N];
 
@@ -228,8 +229,8 @@ int main(void)
 					 	FFT_Output(Bfly_buffer,Spectrum);
 					 	writeSpectrum(0,FFT_N/2,Spectrum,0);
 					 	save_count++;
-						pin0 = search_mask(pin1,Mask_MIC);
-						pin1 = search_mask(pin0,Mask_MIC);
+						pin0 = search_mask(pin1,Mask.MIC);
+						pin1 = search_mask(pin0,Mask.MIC);
 						ADC_chswitch(pin0,pin1);			
 				 	}
 				 	else
