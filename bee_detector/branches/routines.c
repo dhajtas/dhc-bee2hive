@@ -15,8 +15,8 @@ uint8_t readCfgFile(uint8_t *filename_dat, uint8_t atomic)
 {
 	DIR *dir;
 	uint32_t cluster, fileSize, firstSector;
-	uint16_t k,mask;
-	uint8_t i,j,ld,lt,mask_bm;
+	uint16_t k;
+	uint8_t i,j,ld,lt;
 	uint8_t filename[]="CONFIG  CFG";
 	uint8_t filename2[]="_CONFIG CFG";
 	
@@ -79,14 +79,14 @@ uint8_t readCfgFile(uint8_t *filename_dat, uint8_t atomic)
                                Mask.MIC = Mask.MIC<<1;
                                switch(buffer[k+i])
                                {
-                                 case 'X':
-                                         Mask.SHT |= 0x0001;
+ //                                case 'X':					//SHT mask generated from mic mask!
+ //                                        Mask.SHT |= 0x0001;
                                  case 'M':
                                          Mask.MIC |= 0x0001;
                                          break;
-                                 case 'S':
-                                         Mask.SHT |= 0x0001;
-                                         break;
+ //                                case 'S':
+ //                                        Mask.SHT |= 0x0001;
+ //                                        break;
                                  case 'T':
                                          Mask.DS |= 0x0001;
                                          break;
@@ -129,34 +129,7 @@ uint8_t readCfgFile(uint8_t *filename_dat, uint8_t atomic)
 					RTC_SetDateTime(&date, &time);
 //??				if(Mask.SHT)
 //					{
-						mask = Mask.SHT;
-						for(i=0;i<12;i++)
-						{
-							switch(i)
-							{
-								case 6:
-									Mask.SHT0_bm = mask_bm;
-								case 0:
-									mask_bm = 0;
-									break;
-								case 1:
-								case 5:
-								case 7:
-								case 11:
-									mask_bm = mask_bm >> 1;
-									break;
-								default : break;			
-							}
-
-							mask_bm = mask_bm >> 1;
-				
-							if(mask & 0x0001)
-							{
-								mask_bm |= 0x80;
-							}										
-							mask = mask >> 1;	
-						}					
-						Mask.SHT1_bm = mask_bm		
+						generate_mask_bm();
 //					}
 					return(lt);
 				}
@@ -213,3 +186,38 @@ int8_t search_mask(int8_t previous,uint16_t mask)
 //	return(-1);
 }
 
+
+void generate_mask_bm(void)
+{
+		uint16_t mask;
+		uint8_t i,mask_bm;
+
+						mask = Mask.SHT;
+						for(i=0;i<12;i++)
+						{
+							switch(i)
+							{
+								case 6:
+								Mask.SHT0_bm = mask_bm;
+								case 0:
+								mask_bm = 0;
+								break;
+								case 1:
+								case 5:
+								case 7:
+								case 11:
+								mask_bm = mask_bm >> 1;
+								break;
+								default : break;
+							}
+
+							mask_bm = mask_bm >> 1;
+							
+							if(mask & 0x0001)
+							{
+								mask_bm |= 0x80;
+							}
+							mask = mask >> 1;
+						}
+						Mask.SHT1_bm = mask_bm	
+}

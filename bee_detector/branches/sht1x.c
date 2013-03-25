@@ -4,6 +4,7 @@
 //#include "1wire.h"
 #include "hw.h"
 #include "sht1x.h"
+#include "routines.h"
 
 
 //-----------------------------------------------------------------------------------------------//
@@ -11,7 +12,7 @@
 //-----------------------------------------------------------------------------------------------//
 
 //uint8_t SHTmask;		mask.SHTM instead
-SHT SHTbuff[4];
+SHT_t SHTbuff[12];
 
 //-----------------------------------------------------------------------------------------------//
 //		routines
@@ -67,6 +68,7 @@ void SHT_meas_dummy(void)
 {
 	uint16_t msk=0x0001;
 	uint8_t y;
+	uint8_t data[8];
 	
 	for(y=0;y<4;y++)
 	{
@@ -77,8 +79,8 @@ void SHT_meas_dummy(void)
 		SHT_send8_t(0x03,y);
 //		SHT_wait(y);
 		DELAY_MS(220);
-		SHT_rcv8_t(y,0x00);
-		SHT_rcv8_t(y,0x01);
+		SHT_rcv8_t(y,0x00,data);
+		SHT_rcv8_t(y,0x01,data);
 		}
 		msk = msk<<4;
 	}
@@ -87,22 +89,32 @@ void SHT_meas_dummy(void)
 
 //------------------------------------------------------------------------------
 
-void SHT_read_stat(void)
+void SHT_read_stat(void)			//converted
 {
-	uint8_t y;
+	uint8_t y,i,j=0;
+	uint8_t data[8];
 	uint16_t msk=0x0001;
 	
-	for(y=0;y<4;y++)
+	for(y=0;y<2;y++)
 	{
-		if(mask.SHTM && msk)
-		{
 //		SHT_connection_reset(y);
 		SHT_TRX_start(y);
 		SHT_send8_t(SHT_READ_STAT, y);
 //		SHT_wait(y);
-		SHTbuff[y].STATUS = SHT_rcv8_t(y, 0x01);
-		}
-		msk = msk<<4;
+		SHT_rcv8_t(y, 0x01, data);
+		for(i=0;i<8;i++)
+		{
+			switch(i)
+			{
+				case 1:
+				case 6:
+						break;
+				default:
+						j++;
+			}
+			if(Mask.SHT & (0x0001<<(j-1)))
+				SHTbuff[j-1].STATUS = data[i];
+		}		
 	}
 	return;
 }
@@ -114,43 +126,52 @@ void SHT_write_stat(uint8_t status)
 	uint8_t y;
 	uint16_t msk=0x0001;
 	
-	for(y=0;y<4;y++)
+	for(y=0;y<2;y++)
 	{
-		if(mask.SHTM && msk)
-		{
 		SHT_TRX_start(y);
 		SHT_send8_t(SHT_WRITE_STAT, y);
-		SHT_sw_data_dir(y,0x01);
+//??		SHT_sw_data_dir(y,0x01);
 		delay_us(1);
 		SHT_send8_t(status, y);
-		}
-		msk = msk<<4;
 	}
 	return;
 }
 
 //------------------------------------------------------------------------------
 
-void SHT_reset(void)
+void SHT_reset(void)		//converted
 {
-	uint8_t y;
-	uint16_t msk=0x0005;
+	uint8_t y, x, d;
+	uint16_t msk=0x0001;
+
+	Mask.SHT = Mask.MIC;
 	
-	for(y=0;y<4;y++)
+	for(y=0;y<2;y++)			//SHT autodetect ?
 	{
-		if(mask.SHTM && msk)
-		{
-			SHT_sw_data_dir(y,0x01);
+//??			SHT_sw_data_dir(y,0x01);
 			SHT_connection_reset(y);
 			delay_us(1);
 			SHT_TRX_start(y);
-			if(SHT_send8_t(SHT_RESET, y))
+			d = SHT_send8_t(SHT_RESET, y)
+			for(x=0;x<8;x++)
 			{
-				mask.SHTM &= ~msk;			//vymazanie z masky ak nebolo ack...
+				switch(x)
+				{
+					case 1:
+					case 6:
+							break;
+					default:
+							if((d & 0x01))	//if ACK not received
+								Mask.SHT & = ~msk;		//vymaz pripadny bit z masky
+							msk = msk<<1;
+							break;	
+				}					
+				d = d >> 1
 			}
-		}
-		msk = msk<<4;
 	}
+
+	generate_mask_bm();
+	
 	DELAY_MS(50);
 //	SHT_read_stat();
 	return;
@@ -171,7 +192,7 @@ void SHT_connection_reset(uint8_t y)
 
 //------------------------------------------------------------------------------
 
-uint8_t SHT_send8_t(uint8_t data, uint8_t y)
+uint8_t SHT_send8_t(uint8_t data, uint8_t y)		//converted
 {
 	uint8_t x;
 	
@@ -180,32 +201,37 @@ uint8_t SHT_send8_t(uint8_t data, uint8_t y)
 		SHT_send_bit((data&0x80),y);
 		data=data<<1;
 	}
-	SHT_sw_data_dir(y,0x00);
+//??	SHT_sw_data_dir(y,0x00);
 //	delay_us(1);
-	return(SHT_rcv_bit(y));
+	return(SHT_rcv_bit(y));		//read ACK
 }
 
 //------------------------------------------------------------------------------
 
-uint8_t SHT_rcv8_t(uint8_t y, uint8_t ack)		//ack = 1 - no ACK, terminate comm; ack=0 send ACK continue comm.
-{
-	uint8_t data=0, x;
+uint8_t SHT_rcv8_t(uint8_t y, uint8_t ack, uint8_t *data)		//ack = 1 - no ACK, terminate comm; ack=0 send ACK continue comm.
+{							//converted
+	uint8_t d, x, y;
 	
 	for(x=0;x<8;x++)
 	{
-		data = data<<1;
-		data |= SHT_rcv_bit(y);
+		d = SHT_rcv_bit(y);
+		for(y=0; y<8;y++)
+		{
+			data[y] = data[y]<<1;
+			data[y] |= (d & 0x01);
+			d = d>>1;
+		}
 	}
-	SHT_sw_data_dir(y,0x01);
+//??	SHT_sw_data_dir(y,0x01);
 	delay_us(1);
 	SHT_send_bit(ack,y);
-	SHT_sw_data_dir(y,0x00);
+//??	SHT_sw_data_dir(y,0x00);
 	return(data);
 }
 
 //------------------------------------------------------------------------------
 
-void SHT_TRX_start(uint8_t y)
+void SHT_TRX_start(uint8_t y)	//converted
 {
 	uint8_t scl;
 
@@ -232,7 +258,7 @@ void SHT_TRX_start(uint8_t y)
 
 //------------------------------------------------------------------------------
 
-void SHT_send_bit(uint8_t data, uint8_t y)
+void SHT_send_bit(uint8_t data, uint8_t y)	//converted
 {
 	if(!(data))
 	{
@@ -248,7 +274,7 @@ void SHT_send_bit(uint8_t data, uint8_t y)
 
 //------------------------------------------------------------------------------
 
-void SHT_clk(uint8_t y)
+void SHT_clk(uint8_t y)					//converted
 {
 	uint8_t scl;
 	
@@ -267,7 +293,7 @@ void SHT_clk(uint8_t y)
 
 //------------------------------------------------------------------------------
 
-uint8_t SHT_rcv_bit(uint8_t y)
+uint8_t SHT_rcv_bit(uint8_t y)			//converted
 {
 	uint8_t scl;
 	uint8_t data=0;
@@ -309,7 +335,7 @@ uint8_t SHT_rcv_ack(uint8_t y)
 
 //------------------------------------------------------------------------------
 
-void SHT_wait(uint8_t y)
+void SHT_wait(uint8_t y)			//converted
 {
 	switch(y)	// SHT ktore nie su by nemali byt kontrolovane! - data budu stale High...(zabezpecit v inite alebo tu?)
 	{
@@ -325,14 +351,14 @@ void SHT_wait(uint8_t y)
 
 //------------------------------------------------------------------------------
 
-void SHT_init(void)
+void SHT_init(void)				//converted
 {
 	uint16_t msk = mask.SHTM;
 	if(msk && 0x0001)
 
 	{
 		PORTCFG.MPCMASK = SDA_bm;
-		SHT_PORT.PIN0CTRL = WIREDANDPULL_gc;	// wired and and pull-up set for all SDA lines (should be output???)
+		SHT_PORT.PIN0CTRL = WIREDANDPULL_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
 		SHT_PORT.DIRSET  = SDA_bm;		//???,
 		SHT_PORT.DIRSET  = SCL_bm;		//out 0 for SCK
 		SHT_PORT.OUTCLR = SCL_bm;
@@ -347,7 +373,7 @@ void SHT_init(void)
 
 //------------------------------------------------------------------------------
 
-void SHT_sw_data_dir(uint8_t y, uint8_t dir)
+void SHT_sw_data_dir(uint8_t y, uint8_t dir)		//converted
 {	//podla masky - SHT, ktore nemeraju by mali byt LO? kontrola vo SHT_wait - tu neriesit!
 	// kedze wired and cfg je pouzita, smer netreba prepinat vobec... staci poslat data = 1
 	
