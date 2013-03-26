@@ -26,6 +26,7 @@
 #include "include/FAT32.h"
 #include "include/spi.h"
 #include "include/routines.h"
+#include "include/sht1.h"
 
 volatile uint8_t Status;
 volatile uint8_t SD_Status;
@@ -242,6 +243,9 @@ int main(void)
 				 	{
 						SHT_meas(SHT_MEAS_TEMP);						//meraj teplotu a vlhkost na SHT
 						SHT_meas(SHT_MEAS_HUM);
+						writeSpectrum(0,sizeof(SHT_t)*12,SHTbuff,0);	// uloz cely SHT buffer (60 bytov) (este ostava 1988 bytov do 2 clustrov )
+						writeSpectrum(0,sizeof(MASK_t),&Mask,0);		// uloz masky (8 bytov);
+						writeSpectrum(0, FFT_N/2 - ((sizeof(SHT_t)*12)+sizeof(MASK_t)), Spectrum,0);	//dopln do nasobku dlzky spectra nejake data...
 					 	save_count = 0;
 					 	SD_Status &= ~SD_WRITE;
 					 	LED_PORT.OUTCLR = _BV(LED0);					//led off
