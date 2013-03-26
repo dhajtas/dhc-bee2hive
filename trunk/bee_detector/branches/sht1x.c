@@ -1,5 +1,6 @@
 #include <avr/io.h>
 #include <inttypes.h>
+#include <avr/delay.h>
 
 //#include "1wire.h"
 #include "hw.h"
@@ -21,44 +22,47 @@ SHT_t SHTbuff[12];
 void SHT_meas(uint8_t command)
 {
 	uint16_t msk=0x0001;
-	uint8_t crc, y;
+	uint8_t y, i, j=0;
+	uint8_t crc[8], data0[8], data1[8];
 	
-	for(y=0;y<4;y++)
+	for(y=0;y<2;y++)
 	{
-		if(mask.SHTM && msk)
-		{
 //		SHT_connection_reset(y);
 		SHT_TRX_start(y);
 		SHT_send8_t(command,y);
 //		SHT_wait(y);
-		}
-		msk = msk<<4;
-	}
-	
-	if(command == 0x03)
-		DELAY_MS(220);
-	else
-		DELAY_MS(75);	
 		
-	msk=0x0001;
-	for(y=0;y<4;y++)
-	{
-		if(mask.SHTM && msk)
+		if(command == SHT_MEAS_TEMP)
+			_delay_ms(220);
+		else
+			_delay_ms(75);	
+
+		SHT_rcv8_t(y,0,data1);
+		SHT_rcv8_t(y,0,data0);
+		SHT_rcv8_t(y,1,crc);
+
+		msk=0x0001;
+
+		for(i=0;i<8;i++)
 		{
-			if(command == 0x03)
+			switch(i)
 			{
-				SHTbuff[y].TEMP = (uint16_t)SHT_rcv8_t(y,0x00) << 8;
-				SHTbuff[y].TEMP |= (uint16_t)SHT_rcv8_t(y,0x00);
+				case 1:
+				case 6:
+					break;
+				default:
+					j++;
 			}
-			else
+			if(Mask.SHT & (0x0001<<(j-1)))
 			{
-				SHTbuff[y].HUM = (uint16_t)SHT_rcv8_t(y,0x00) << 8;
-				SHTbuff[y].HUM |= (uint16_t)SHT_rcv8_t(y,0x00);
+				if(command == SHT_MEAS_TEMP)
+					SHTbuff[j-1].TEMP = (uint16_t)data1<<8 | data0;
+				else
+					SHTbuff[j-1].HUM = (uint16_t)data1<<8 | data0;
 			}
-			crc = SHT_rcv8_t(y,0x01);
+			SHTbuff[j-1].STATUS = data[i];
 		}
-		msk = msk<<4;
-	}
+	}	
 	return;
 }
 
@@ -76,9 +80,9 @@ void SHT_meas_dummy(void)
 		{
 		SHT_connection_reset(y);
 		SHT_TRX_start(y);
-		SHT_send8_t(0x03,y);
+		SHT_send8_t(SHT_MEAS_TEMP,y);
 //		SHT_wait(y);
-		DELAY_MS(220);
+		_delay_ms(220);
 		SHT_rcv8_t(y,0x00,data);
 		SHT_rcv8_t(y,0x01,data);
 		}
@@ -172,7 +176,7 @@ void SHT_reset(void)		//converted
 
 	generate_mask_bm();
 	
-	DELAY_MS(50);
+	_delay_ms(50);
 //	SHT_read_stat();
 	return;
 }
@@ -243,15 +247,15 @@ void SHT_TRX_start(uint8_t y)	//converted
 		scl = SCL0;
 
 	SHT_PORT.OUTSET = scl;		//clk Hi
-	delay_us(1);	// wait 1us
+	_delay_us(1);	// wait 1us
 	SHT_PORT.OUTCLR = SDA_bm;	// data lo
-	delay_us(1);	// wait 1us
+	_delay_us(1);	// wait 1us
 	SHT_PORT.OUTCLR = scl;		// clk lo
-	delay_us(4);	// wait 2us
+	_delay_us(4);	// wait 2us
 	SHT_PORT.OUTSET = scl;		//clk hi
-	delay_us(1);	// wait 1us
+	_delay_us(1);	// wait 1us
 	SHT_PORT.OUTSET = SDA_bm;	// data hi
-	delay_us(1);	// wait 1us
+	_delay_us(1);	// wait 1us
 	SHT_PORT.OUTCLR = scl;		// clk lo
 	return;
 }
@@ -278,7 +282,7 @@ void SHT_clk(uint8_t y)					//converted
 {
 	uint8_t scl;
 	
-	delay_us(2);
+	_delay_us(2);
 
 	if(y)
 		scl = SCL1;
@@ -286,7 +290,7 @@ void SHT_clk(uint8_t y)					//converted
 		scl = SCL0;
 
 	SHT_PORT.OUTSET = scl;	// CLK hi
-	delay_us(2);			// wait 1us
+	_delay_us(2);			// wait 1us
 	SHT_PORT.OUTCLR = scl;	// CLK lo
 	return;
 }
@@ -303,10 +307,10 @@ uint8_t SHT_rcv_bit(uint8_t y)			//converted
 	else
 		scl = SCL0;
 	
-	delay_us(5);	// wait 1us
+	_delay_us(5);	// wait 1us
 	SHT_PORT.OUTSET = scl;	// CLK hi
 	data = SHT_PORT.IN & SDA_bm
-	delay_us(2);	// wait 1us
+	_delay_us(2);	// wait 1us
 	SHT_PORT.OUTCLR = scl;	// CLK lo
 	return(data);
 }
@@ -363,7 +367,7 @@ void SHT_init(void)				//converted
 		SHT_PORT.DIRSET  = SCL_bm;		//out 0 for SCK
 		SHT_PORT.OUTCLR = SCL_bm;
 	}
-	DELAY_MS(20);
+	_delay_ms(20);
 	SHT_reset();
 	return;
 }
