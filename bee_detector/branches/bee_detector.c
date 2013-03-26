@@ -40,6 +40,7 @@ MASK_t Mask;
 
 uint8_t Resets __attribute__ ((section (".noinit")));
 uint16_t EE_cal[12] EEMEM;
+MASK_t EE_mask EEMEM;
 
 void Debug_Init(void);
 void CCPWrite(volatile uint8_t * address, uint8_t value);
@@ -56,9 +57,9 @@ int main(void)
 
  	Status = 0;
  	Resets++;
-	Mask_MIC = 0;
-	Mask_SHT = 0;
-	Mask_DS  = 0;
+	Mask.MIC = 0;
+	Mask.SHT = 0;
+	Mask.DS  = 0;
 	
 	
  	CCPWrite(&PMIC.CTRL, 0x00);			// make sure IVSEL is zero - interrupts in application section
@@ -124,6 +125,7 @@ int main(void)
 	}
 	
 	eeprom_write_block(ADC_Cal, EE_cal, 24);
+	
 */			
  	LED_PORT.OUTCLR = _BV(LED2);
  	
@@ -161,8 +163,11 @@ int main(void)
 				 				printf_P(PSTR("OLD CFG USED"));
 			 				}
 #endif
+							SHT_init();
+							eeprom_write_block(Mask, EE_mask, sizeof(MASK_t));
 			 				LED_PORT.OUTSET = _BV(LED1);
 			 				SD_Status |= SD_READY | SD_FS_READY;
+
 			 				break;
 
 			 	case	1:
@@ -235,6 +240,8 @@ int main(void)
 				 	}
 				 	else
 				 	{
+						SHT_meas(SHT_MEAS_TEMP);						//meraj teplotu a vlhkost na SHT
+						SHT_meas(SHT_MEAS_HUM);
 					 	save_count = 0;
 					 	SD_Status &= ~SD_WRITE;
 					 	LED_PORT.OUTCLR = _BV(LED0);					//led off
@@ -306,6 +313,7 @@ int main(void)
 					 			SD_Status |= SD_MEASUREMENT;
 				 			}
 				 			Status |= MEASUREMENT;
+							SHT_meas_dummy();
 				 	//							old_m = Time.m;
 				 			LED_PORT.OUTSET = _BV(LED2);
 				 	case 0:	break;
