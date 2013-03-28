@@ -74,7 +74,6 @@ uint8_t readCfgFile(uint8_t *filename_dat, uint8_t atomic)
                              k++;
                              for(i=0;i<13;i++)
                              {
-                               Mask.DS = Mask.DS<<1;
                                Mask.SHT = Mask.SHT<<1;
                                Mask.MIC = Mask.MIC<<1;
                                switch(buffer[k+i])
@@ -88,7 +87,7 @@ uint8_t readCfgFile(uint8_t *filename_dat, uint8_t atomic)
  //                                        Mask.SHT |= 0x0001;
  //                                        break;
                                  case 'T':
-                                         Mask.DS |= 0x0001;
+                                         Mask.DS |= 0x01;		// any T will cause DS mask to be one...
                                          break;
                                  default:
                                          break;

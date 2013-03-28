@@ -14,7 +14,7 @@ typedef struct MASK_struct {
 	uint16_t SHT;
 	uint8_t SHT0_bm;
 	uint8_t SHT1_bm;
-	uint16_t DS;
+	uint8_t DS;
 }, MASK_t;
 
 #define AVR_ENTER_CRITICAL_REGION( ) uint8_t volatile saved_sreg = SREG; \

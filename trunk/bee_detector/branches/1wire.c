@@ -1,12 +1,11 @@
 #include <avr/io.h>
+#include <avr/delay.h>
+#include <avr/eeprom.h>
 #include <inttypes.h>
 
-#include "data_max.h"
 #include "1wire.h"
 #include "at25256.h"
-#include "rsc0.h"
 #include "routines.h"
-#include "ds2450.h"
 
 #define		OW_PORT		PORT(I2C_P)
 
@@ -15,7 +14,9 @@
 //-----------------------------------------------------------------------------------------------//
 
 OWIRE OWbuff[OW_NUM];
-
+uint8_t EE_ow_mask EEMEM;
+uint8_t EE_ow_error EEMEM;
+OWIRE_t EE_ow_id[OW_NUM] EEMEM;
 //-----------------------------------------------------------
 //-----------------------------------------------------------
 
@@ -48,7 +49,7 @@ void clr_owBuffer(void)
 uint8_t GetDallasID(uint8_t j)
 {
  MEMPTR ptr;
- uint8_t l, m, pom, checksum = 0, pokus = 0;
+ uint8_t l, pokus = 0;
  uint8_t dallas,error;
 					//??????'vysledkom je 128bytov v buffry (pole[16,8]), vzdy 8x1.byte,8x2.byte....
 					//nevolat Write -> problem s ptrlast. radsej priamo volat Mem_WRITE a Mem_WAIT!
@@ -69,86 +70,24 @@ uint8_t GetDallasID(uint8_t j)
 
 	if(pokus == 5)	//ak skoncil citanie neuspesne ->chyba na linke v maske error
 	{
-	}
-
-	for(l=0;l<D_NUM;l++)	//zistovanie typu dallasu podla ID
-	{
-		mask.DS1820 >>= 1;
-		mask.DS2450 >>= 1;
-		switch(OWbuff[l].data[0])
-		{
-			case 0x10:
-				mask.DS1820 |= 0x8000;
-				mask.DS2450 &= 0x7FFF;
-				break;
-			case 0x20:
-				mask.DS1820 &= 0x7FFF;
-				mask.DS2450 |= 0x8000;
-				break;
-			default:
-				mask.DS1820 &= 0x7FFF;
-				mask.DS2450 &= 0x7FFF;
-				break;
-		}
+		return(0);
 	}
 
 	if(!j)				//ak ma zapisovat do pamate
 	{
-		ptr.adr = 0x002C;
-		ptr.page = 0x00;
-		for(l=0;l<32;l+=8)
-		{
-			pom = (uint8_t)(DateTime>>l);
-			Mem_WRITE(pom,&ptr,0);
-			Add_Adr(&ptr,1);
-			Mem_WAIT();
-		}
 							//maska dallasov do pamate
-		Mem_WRITE((uint8_t)dallas,&ptr,0);		//low byte
-		Add_Adr(&ptr,1);
-		Mem_WAIT();
-		pom = (uint8_t)(dallas>>8);
-		Mem_WRITE(pom,&ptr,0);		//high byte
-		Add_Adr(&ptr,1);
-		Mem_WAIT();
-							//maska CRC chyb do pamate
-		Mem_WRITE((uint8_t)error,&ptr,0);		//low byte
-		Add_Adr(&ptr,1);
-		Mem_WAIT();
-		pom = (uint8_t)(error>>8);
-		Mem_WRITE(pom,&ptr,0);		//high byte
-		Add_Adr(&ptr,1);
-		Mem_WAIT();
+		eeprom_write_byte(EE_ow_mask, dallas);
 
-		for(l=0;l<D_NUM;l++)
+							//maska CRC chyb do pamate
+		eeprom_write_byte(EE_ow_error,error);		//low byte
+
+		for(l=0;l<OW_NUM;l++)
 		{
-	 		for(m=0;m<8;m++)
-	 		{
-	 			Mem_WRITE(OWbuff[l].data[m],&ptr,0);
-	 			Add_Adr(&ptr,1);
-	 			Mem_WAIT();
-	 		}
-	 	}
-	 	checksum = 0;
-	}
-	else
-	{
-	 	checksum = Ser_com_txw(dallas);		//posle masku najdenych dallasov
-	 	checksum += Ser_com_txw(error);		//posle masku chyb pri komunikacii (CRC)
-		for(l=0;l<D_NUM;l++)
-		{
-	 		for(m=0;m<8;m++)
-	 		{
-//	 			checksum += Write(OWbuff[l].data[m],j,0);	//naco?
-	 			checksum += Ser_com_txb(OWbuff[l].data[m]);
-	 		}
+			eeprom_write_block(OWbuff[l], EE_ow_id[l], 8);
 	 	}
 	}
-	if(mask.DS2450)
-	{
-		InitDS2450(mask.DS2450);
-	}
-	return(checksum);
+
+	return(dallas);
 }
 
 //-----------------------------------------------------------
@@ -160,7 +99,7 @@ void owire(uint8_t command, port_width dallas)		//, OWIRE buffer[16], uint8_t si
 	ow_reset(dallas);
 	ow_setprt(dallas);
 	if(command != 0x33)
-		ow_outp(0xCC,dallas);
+		ow_outp(0xCC,dallas); // skip ROM - only if single dallas is on line...
 	ow_outp(command,dallas);
 /*	for(l = 0;l<size;l++)
 	{
@@ -236,7 +175,7 @@ uint8_t CheckCRC_8(OWIRE *buffer, uint8_t dallas, uint8_t count)	//uint8_t base,
  uint8_t error = 0;
  uint8_t l,m,data;
 
- 	for(m=0;m<D_NUM;m++)
+ 	for(m=0;m<OW_NUM;m++)
  	{
  		error >>= 1;
  		if(dallas & 0x01)
@@ -373,8 +312,6 @@ uint8_t ow_recbit(register uint8_t dallas)
 uint8_t ow_reset(register uint8_t dallas)
 {
 
-	register uint8_t pom1;
-
 	OW_PORT.OUTSET = dallas;		//set 1w lines low byte
 	_delay_us(250);				//na odstranenie dummy resetu (pred tymto boli draty na 0 takze hned pride pulz a potom sa uz nic nedeje :-( )
 
@@ -385,14 +322,14 @@ uint8_t ow_reset(register uint8_t dallas)
 	OW_PORT.OUTSET = dallas;			//set 1w lines low byte (wired AND and passive pull-up)
 	_delay_us(70);
 
-	pom1 = OW_PORT.IN;				//citaj presence pulse -> 0 znamena pritomny
+	dallas = OW_PORT.IN;				//citaj presence pulse -> 0 znamena pritomny
 	_delay_us(300);
 	
-	pom1 = pom1 | ~(OW_PORT.IN);			//ak tam skutocne je, 0 musi po case zmiznut.
+	dallas = dallas | ~(OW_PORT.IN);			//ak tam skutocne je, 0 musi po case zmiznut.
 	sei();			//enable interrupts
 	_delay_us(250);
 
-	return(~pom1);			//inverted result is in zl
+	return(~dallas);			//inverted result is in zl
 }
 
 //-----------------------------------------------------------
