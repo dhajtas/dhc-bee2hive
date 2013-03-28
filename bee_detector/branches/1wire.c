@@ -26,7 +26,7 @@ uint8_t ow_Init(void)
 	clr_owBuffer();
  	maskIn = OW_bm;
  	maskOut = (ow_reset(maskIn) & maskIn);
- 	ow_rstprt(maskOut);
+// 	ow_rstprt(maskOut);		//pre xmega netreba ak wired and setting pouzite 
  	return(maskOut);
 }
 
@@ -158,6 +158,7 @@ void owire(uint8_t command, port_width dallas)		//, OWIRE buffer[16], uint8_t si
 // register uint8_t l;			//owire len zabezpecuje zaciatok komunikacie...
 
 	ow_reset(dallas);
+	ow_setprt(dallas);
 	if(command != 0x33)
 		ow_outp(0xCC,dallas);
 	ow_outp(command,dallas);
@@ -189,7 +190,7 @@ void ow_outp(register uint8_t data, register port_width dallas)
 
 //-----------------------------------------------------------
 
-void ow_inp(OWIRE *buffer,register uint8_t x, register uint8_t dallas)
+void ow_inp(OWIRE *buffer,register uint8_t x, register uint8_t dallas)		// bude iba 1 dallas!!
 {
  register uint8_t data;
  register uint8_t l,m;
@@ -201,12 +202,12 @@ void ow_inp(OWIRE *buffer,register uint8_t x, register uint8_t dallas)
 		for(m=OW_NUM;m>0;m--)
 		{
 			buffer[m-1].data[x] >>=1;				//priprava dat v buffri na prichod nasl.bitu
-//			buffer[m].data[x] &=0xFE;				//vynuluj nulty bit (co ak bol 1?)
-
-			buffer[m-1].data[x] |= data & 0x80;			//pripisanie nulteho bitu (prave zapisovany dallas)
+			buffer[m-1].data[x] &=0xFE;				//vynuluj nulty bit (co ak bol 1?)
+			if(data)
+				buffer[0].data[x] |= 0x80;			//pripisanie nulteho bitu (prave zapisovany dallas)
 
 			data <<=1;						//posun prijatych dat o 1 do ????prava???? do lava??? -> nasl. dallas
-		}
+//		}
 	}
 }
 
@@ -322,11 +323,8 @@ uint16_t CRC_16(uint16_t CRC, uint8_t x)
 
 void ow_sendbit(register uint8_t dallas,register uint8_t data)
 {
-	register uint8_t pom1,pom10;
-	
-	pom1 = PORTDIO;
-	pom10 = pom1 & ~((uint8_t)dallas);
-	PORTDIO = pom10;			//clear 1w lines low byte
+
+	OW_PORT.OUTCLR = dallas;			//clear 1w lines low byte
 
 	cli();
 
@@ -335,44 +333,39 @@ void ow_sendbit(register uint8_t dallas,register uint8_t data)
 
 	if(data & 0x01)				//				!data.0
 	{
-		PORTDIO = pom1;			//if send 1, set the lines
+		OW_PORT.OUTSET = dallas;			//if send 1, set the lines
 	}
 
 	_delay_us(ONE_WIRE_WRITE_SLOT_TIME_US);
 	
 	sei();
-	PORTDIO = pom1;				// set the 1W lines
+	OW_PORT.OUTSET = dallas;				// set the 1W lines
 }
 
 //-----------------------------------------------------------
 
 uint8_t ow_recbit(register uint8_t dallas)
 {
-	register uint8_t pom3,pom1,pom10,pom30;
-
-	pom1 = PORTDIO;
-	pom10 = pom1 & ~((uint8_t)dallas);
-	pom3 = DDRDIO;
-	pom30 = pom3 & ~((uint8_t)dallas);
+	register uint8_t pom1;
 	
 	cli();					//disable interrupts (time critical)
 	
-	PORTDIO = pom10;			//clear 1w lines low byte
+	OW_PORT.OUTCLR = dallas;			//clear 1w lines low byte
 	
 	//	DELAY_OW_RECOVERY_TIME();		//pre 8535
 	_delay_us(ONE_WIRE_RECOVERY_TIME_US);	//pre mega128
 
-	PORTDIO = pom1;				//active pull-up najprv vnutit tvrdu jeddnotku ako vystup
-	DDRDIO = pom30;				//a potom prepnut na vstup s pull-up odporom
+	OW_PORT.OUTSET = dallas;				//active pull-up najprv vnutit tvrdu jeddnotku ako vystup
+	OW_PORT.DIRCLR = dallas;				//a potom prepnut na vstup s pull-up odporom - mozno bude potrebne pre zrychlenie hrany (+ pred zaciatkom 1w komunikacie zmenit nastavenie daneho pinu na totem pole + pullup)
 	
 	_delay_us(13);
 	
-	pom1 = PINDIO;  			//low byte
+	pom1 = OW_PORT.IN;  			//low byte
 	sei();
-		_delay_us(ONE_WIRE_READ_SLOT_TIME_US);
+	_delay_us(ONE_WIRE_READ_SLOT_TIME_US);
 
-	DDRDIO = pom3;				//return ports to init state for 1w comm (outpu, H on pin)
-	return(pom1);	//combine low and high byte to one 16bit int
+	OW_PORT.DIRSET = dallas;				//return ports to init state for 1w comm (outpu, H on pin)
+	return(pom1);	//
 }
 
 //-----------------------------------------------------------
@@ -380,43 +373,43 @@ uint8_t ow_recbit(register uint8_t dallas)
 uint8_t ow_reset(register uint8_t dallas)
 {
 
-	register uint8_t pom3,pom1;
-	uint8_t pom10;
+	register uint8_t pom1;
 
-	pom10 = PORTDIO;
-	pom3 = DDRDIO;
-	pom1 = pom10;
-
-	PORTDIO = pom1 | dallas;		//set 1w lines low byte
+	OW_PORT.OUTSET = dallas;		//set 1w lines low byte
 	_delay_us(250);				//na odstranenie dummy resetu (pred tymto boli draty na 0 takze hned pride pulz a potom sa uz nic nedeje :-( )
-	DDRDIO = pom3 | dallas;		//set 1w lines as output low byte
 
-	PORTDIO = pom1 & ~dallas;			//clear 1w lines low byte
+	OW_PORT.OUTCLR = dallas;			//clear 1w lines low byte
 	_delay_us(550);
 
 	cli();							//disable interrupts
-	DDRDIO = pom3 & ~dallas;			//inputs 1w (low byte)
-	PORTDIO = pom1 | dallas;			//set 1w lines low byte (passive pull-up)
+	OW_PORT.OUTSET = dallas;			//set 1w lines low byte (wired AND and passive pull-up)
 	_delay_us(70);
 
-	pom1 = PINDIO;				//citaj presence pulse -> 0 znamena pritomny
+	pom1 = OW_PORT.IN;				//citaj presence pulse -> 0 znamena pritomny
 	_delay_us(300);
 	
-	pom1 = pom1 | ~PINDIO;			//ak tam skutocne je, 0 musi po case zmiznut.
+	pom1 = pom1 | ~(OW_PORT.IN);			//ak tam skutocne je, 0 musi po case zmiznut.
 	sei();			//enable interrupts
 	_delay_us(250);
-	pom1 = ~pom1;
 
-	DDRDIO = (pom3 | pom1);		//vrat port do povodneho stavu, ale kde najde 1w ostane vystup!
-	PORTDIO = (pom10 | pom1);		//vrat port do povodneho stavu, ale kde je 1w tam bude H!
-
-	return(pom1);			//inverted result is in zl
+	return(~pom1);			//inverted result is in zl
 }
 
 //-----------------------------------------------------------
 
+void ow_setprt(register uint8_t dallas)
+{
+	PORTCFG.MPCMASK = dallas;
+	OW_PORT.PIN0CTRL = PULLUP_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
+	OW_PORT.DIRSET = dallas;		//wired AND output + pullup... len pre xmega
+	OW_PORT.OUTSET = dallas;	
+	
+}
+
 void ow_rstprt(register uint8_t dallas)
 {
-	OW_PORT.DIRCLR = dallas;		//put all 1w lines to the HiZ
-	OW_PORT.OUTCLR = dallas;
+	PORTCFG.MPCMASK = dallas;
+	OW_PORT.PIN0CTRL = WIREDANDPULL_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
+	OW_PORT.DIRSET = dallas;		//wired AND output + pullup... len pre xmega
+	OW_PORT.OUTSET = dallas;
 }
