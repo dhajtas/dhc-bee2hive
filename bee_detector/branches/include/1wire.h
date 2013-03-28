@@ -10,7 +10,7 @@
 typedef struct OWIRE
 {
 	uint8_t data[8];
-} OWIRE;
+} OWIRE_t;
 
 //-----------------------------------------------------------------------------------------------//
 //		Global variables
@@ -23,29 +23,31 @@ extern OWIRE OWbuff[OW_NUM];
 //-----------------------------------------------------------------------------------------------//
 
 
-port_width ow_Init(void);
+uint8_t ow_Init(void);
 
 void clr_owBuffer(void);
 
 uint8_t GetDallasID(uint8_t);
 
-void owire(uint8_t, port_width);	// OWIRE*, uint8_t, uint8_t);
+void owire(uint8_t, uint8_t);	// OWIRE*, uint8_t, uint8_t);
 
-port_width ow_reset(port_width);
+uint8_t ow_reset(uint8_t);
 
-void ow_rstprt(port_width);
+void ow_rstprt(uint8_t);
 
-void ow_outp(uint8_t, port_width);
+void ow_setprt(uint8_t);
 
-void ow_inp(OWIRE*, uint8_t, port_width);
+void ow_outp(uint8_t, uint8_t);
 
-uint8_t ow_inp_1(port_width);
+void ow_inp(OWIRE*, uint8_t, uint8_t);
 
-void ow_sendbit(port_width, uint8_t);
+uint8_t ow_inp_1(uint8_t);
 
-port_width ow_recbit(port_width);
+void ow_sendbit(uint8_t, uint8_t);
 
-port_width CheckCRC_8(OWIRE*, port_width, uint8_t);	//uint8_t,
+uint8_t ow_recbit(uint8_t);
+
+uint8_t CheckCRC_8(OWIRE*, uint8_t, uint8_t);	//uint8_t,
 
 void delay_us(uint16_t);
 
@@ -54,7 +56,7 @@ uint8_t CRC_8(uint8_t, uint8_t);
 uint16_t CRC_16(uint16_t, uint8_t);
 
 #ifndef  F_CPU
-#define  F_CPU		              8000000   /* The cpu clock frequency in Hertz */
+#define  F_CPU		              32000000   /* The cpu clock frequency in Hertz */
 #endif
 
 #define ONE_WIRE_RECOVERY_TIME_US     2       /* The time for the pullup resistor to get the line high */

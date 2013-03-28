@@ -128,9 +128,6 @@
     <None Include="1wire.c">
       <SubType>compile</SubType>
     </None>
-    <None Include="1wire_02.c">
-      <SubType>compile</SubType>
-    </None>
     <Compile Include="adc.c">
       <SubType>compile</SubType>
     </Compile>

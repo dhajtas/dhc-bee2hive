@@ -7,19 +7,20 @@
 #include "ds1820.h"
 
 
-void ConvertT(port_width dallas)		//zaciatok merania pre DS1820
+void ConvertT(uint8_t dallas)		//zaciatok merania pre DS1820
 {
 	owire(0x44,dallas);		//start measurement,1Wbuff ptr, read 0 bytes, do not switch off power after finish)
+//	ow_rstprt(dallas);		// keep strong pull-up 
 	ow_reset(dallas);
 }
 
 //----------------------------------------------------------
 //	Read the data from 1W devices
 
-port_width Read1820(port_width error)
+uint8_t Read1820(uint8_t error)
 {
  uint8_t l, m, pokus=0;
- port_width errormask = (port_width)0x0001;
+ uint8_t errormask = 0x01;
 
 //???;*'vysledkom je 16 bytov v buffroch: 8x1.byte+8x2.byte...
 	do
@@ -29,6 +30,7 @@ port_width Read1820(port_width error)
 		{
 			ow_inp(OWbuff,l,error);	//zacinaj ukladat data vzdy od 1. dallasu byte "l"
 		}
+		ow_rstprt(error);
 		ow_reset(error);
 		error = CheckCRC_8(OWbuff,error,8); 	//checkCRC
 		pokus++;
@@ -37,7 +39,7 @@ port_width Read1820(port_width error)
   	
   	if(error)		//ak bola chyba v comm, tak data pri chybe = 0xFF
   	{
-  		for(l=0;l<D_NUM;l++)
+  		for(l=0;l<OW_NUM;l++)
   		{
   			if(error & errormask)
   			{

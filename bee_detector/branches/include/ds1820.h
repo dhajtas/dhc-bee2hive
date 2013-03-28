@@ -14,9 +14,9 @@
 //		routines
 //-----------------------------------------------------------------------------------------------//
 
-void ConvertT(port_width);
+void ConvertT(uint8_t);
 
-port_width Read1820(port_width);
+uint8_t Read1820(uint8_t);
 
 uint16_t ReadTemp(uint8_t);
 

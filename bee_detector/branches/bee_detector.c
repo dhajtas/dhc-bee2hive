@@ -27,6 +27,8 @@
 #include "include/spi.h"
 #include "include/routines.h"
 #include "include/sht1.h"
+#include "include/1wire"
+#include "include/ds1820.h"
 
 volatile uint8_t Status;
 volatile uint8_t SD_Status;
@@ -50,6 +52,7 @@ int main(void)
 {
  	uint8_t x, save_count = 0, error = 0, pin0, pin1;
  	uint8_t write_restart = 0;
+	uint16_t ow_temp = 0;
  	//	uint16_t i;
 
  	uint8_t filename[13];
@@ -165,7 +168,9 @@ int main(void)
 			 				}
 #endif
 							SHT_init();
-							eeprom_write_block(Mask, EE_mask, sizeof(MASK_t));
+							if(Mask.DS)
+								Mask.DS = GetDallasID(1);			// zapis do EEprom masku dallasov a dallasID /debug/
+							eeprom_write_block(Mask, EE_mask, sizeof(MASK_t)); //zapis do EEprom vsetky masky /debug/
 			 				LED_PORT.OUTSET = _BV(LED1);
 			 				SD_Status |= SD_READY | SD_FS_READY;
 
@@ -243,9 +248,17 @@ int main(void)
 				 	{
 						SHT_meas(SHT_MEAS_TEMP);						//meraj teplotu a vlhkost na SHT
 						SHT_meas(SHT_MEAS_HUM);
+						if(Mask.DS)
+						{
+							ConvertT(Mask.DS);
+							_delay_ms(800);
+							Read1820(Mask.DS);
+							ow_temp = ReadTemp(0);						// only 1 dallas connected
+						}						
 						writeSpectrum(0,sizeof(SHT_t)*12,SHTbuff,0);	// uloz cely SHT buffer (60 bytov) (este ostava 1988 bytov do 2 clustrov )
+						writeSpectrum(0,2,&ow_temp,0);					// uloz dallas teplotu (2 bytes)
 						writeSpectrum(0,sizeof(MASK_t),&Mask,0);		// uloz masky (8 bytov);
-						writeSpectrum(0, FFT_N/2 - ((sizeof(SHT_t)*12)+sizeof(MASK_t)), Spectrum,0);	//dopln do nasobku dlzky spectra nejake data...
+						writeSpectrum(0, FFT_N/2 - ((sizeof(SHT_t)*12)+sizeof(MASK_t)+2), Spectrum,0);	//dopln do nasobku dlzky spectra nejake data...
 					 	save_count = 0;
 					 	SD_Status &= ~SD_WRITE;
 					 	LED_PORT.OUTCLR = _BV(LED0);					//led off
