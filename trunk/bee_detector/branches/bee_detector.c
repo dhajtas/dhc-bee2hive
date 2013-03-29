@@ -246,8 +246,11 @@ int main(void)
 				 	}
 				 	else
 				 	{
-						SHT_meas(SHT_MEAS_TEMP);						//meraj teplotu a vlhkost na SHT
-						SHT_meas(SHT_MEAS_HUM);
+						 if(Mask.SHT)
+						 {
+							SHT_meas(SHT_MEAS_TEMP);						//meraj teplotu a vlhkost na SHT
+							SHT_meas(SHT_MEAS_HUM);
+						 }						
 						if(Mask.DS)
 						{
 							ConvertT(Mask.DS);
