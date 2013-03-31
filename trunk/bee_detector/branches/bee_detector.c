@@ -26,8 +26,8 @@
 #include "include/FAT32.h"
 #include "include/spi.h"
 #include "include/routines.h"
-#include "include/sht1.h"
-#include "include/1wire"
+#include "include/sht1x.h"
+#include "include/1wire.h"
 #include "include/ds1820.h"
 
 volatile uint8_t Status;
@@ -130,7 +130,7 @@ int main(void)
 	
 	eeprom_write_block(ADC_Cal, EE_cal, 24);
 	
-*/			
+			
  	LED_PORT.OUTCLR = _BV(LED2);
  	
  	x = 0;
@@ -170,7 +170,7 @@ int main(void)
 							SHT_init();
 							if(Mask.DS)
 								Mask.DS = GetDallasID(1);			// zapis do EEprom masku dallasov a dallasID /debug/
-							eeprom_write_block(Mask, EE_mask, sizeof(MASK_t)); //zapis do EEprom vsetky masky /debug/
+							eeprom_write_block(&Mask, &EE_mask, sizeof(MASK_t)); //zapis do EEprom vsetky masky /debug/
 			 				LED_PORT.OUTSET = _BV(LED1);
 			 				SD_Status |= SD_READY | SD_FS_READY;
 
@@ -232,13 +232,20 @@ int main(void)
 					 	FFT_Input(&Signal[0][0], Bfly_buffer);
 						FFT_Execute(Bfly_buffer);
 		 				FFT_Output(Bfly_buffer,Spectrum);
-					 	writeSpectrum(0,FFT_N/2,Spectrum,0);
+						if(Mask.MIC & (0x0001 << pin0))
+					 		writeSpectrum(0,FFT_N/2,Spectrum,0);
+						else
+							writeZeroes(0,FFT_N/2,0);
 					 	save_count++;
 						 
 					 	FFT_Input(&Signal[1][0], Bfly_buffer);
 					 	FFT_Execute(Bfly_buffer);
 					 	FFT_Output(Bfly_buffer,Spectrum);
-					 	writeSpectrum(0,FFT_N/2,Spectrum,0);
+						if(Mask.MIC & (0x0001 << pin1))
+							writeSpectrum(0,FFT_N/2,Spectrum,0);
+						else
+							writeZeroes(0,FFT_N/2,0);
+
 					 	save_count++;
 						pin0 = search_mask(pin1,Mask.MIC);
 						pin1 = search_mask(pin0,Mask.MIC);
@@ -250,18 +257,23 @@ int main(void)
 						 {
 							SHT_meas(SHT_MEAS_TEMP);						//meraj teplotu a vlhkost na SHT
 							SHT_meas(SHT_MEAS_HUM);
-						 }						
+							writeSpectrum(0,sizeof(SHT_t)*12,(uint16_t*)SHTbuff,0);	// uloz cely SHT buffer (60 bytov) (este ostava 1988 bytov do 2 clustrov )
+						 }	
+						 else
+						 	writeZeroes(0,sizeof(SHT_t)*12,0);						// uloz nuly ak nie je SHT (60 bytov) (este ostava 1988 bytov do 2 clustrov )				
 						if(Mask.DS)
 						{
 							ConvertT(Mask.DS);
 							_delay_ms(800);
 							Read1820(Mask.DS);
 							ow_temp = ReadTemp(0);						// only 1 dallas connected
-						}						
-						writeSpectrum(0,sizeof(SHT_t)*12,SHTbuff,0);	// uloz cely SHT buffer (60 bytov) (este ostava 1988 bytov do 2 clustrov )
-						writeSpectrum(0,2,&ow_temp,0);					// uloz dallas teplotu (2 bytes)
-						writeSpectrum(0,sizeof(MASK_t),&Mask,0);		// uloz masky (8 bytov);
-						writeSpectrum(0, FFT_N/2 - ((sizeof(SHT_t)*12)+sizeof(MASK_t)+2), Spectrum,0);	//dopln do nasobku dlzky spectra nejake data...
+							writeSpectrum(0,2,(uint16_t*)&ow_temp,0);					// uloz dallas teplotu (2 bytes)
+						}	
+						else
+							writeZeroes(0,2,0);					// uloz dallas teplotu (2 bytes)				
+												
+						writeSpectrum(0,sizeof(MASK_t),(uint16_t*)&Mask,0);		// uloz masky (8 bytov);
+						writeZeroes(0, FFT_N/2 - ((sizeof(SHT_t)*12)+sizeof(MASK_t)+2),0);	//dopln do nasobku dlzky spectra nejake data...
 					 	save_count = 0;
 					 	SD_Status &= ~SD_WRITE;
 					 	LED_PORT.OUTCLR = _BV(LED0);					//led off

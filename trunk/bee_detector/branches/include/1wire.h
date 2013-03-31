@@ -16,7 +16,7 @@ typedef struct OWIRE
 //		Global variables
 //-----------------------------------------------------------------------------------------------//
 
-extern OWIRE OWbuff[OW_NUM];
+extern OWIRE_t OWbuff[OW_NUM];
 
 //-----------------------------------------------------------------------------------------------//
 //		routines
@@ -39,7 +39,7 @@ void ow_setprt(uint8_t);
 
 void ow_outp(uint8_t, uint8_t);
 
-void ow_inp(OWIRE*, uint8_t, uint8_t);
+void ow_inp(OWIRE_t*, uint8_t, uint8_t);
 
 uint8_t ow_inp_1(uint8_t);
 
@@ -47,7 +47,7 @@ void ow_sendbit(uint8_t, uint8_t);
 
 uint8_t ow_recbit(uint8_t);
 
-uint8_t CheckCRC_8(OWIRE*, uint8_t, uint8_t);	//uint8_t,
+uint8_t CheckCRC_8(OWIRE_t*, uint8_t, uint8_t);	//uint8_t,
 
 void delay_us(uint16_t);
 

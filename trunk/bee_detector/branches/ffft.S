@@ -34,7 +34,7 @@
 
 .nolist
 #define FFFT_ASM
-#include "ffft.h"
+#include "include/ffft.h"
 .list
 
 #if FFT_N == 512

@@ -154,6 +154,7 @@ uint8_t renameFile(uint8_t *oldName, uint8_t *newName, uint8_t atomic);
 uint8_t openFile(uint8_t *fileName, uint8_t flag, uint8_t atomic);
 void writeFile (uint8_t atomic);
 void writeSpectrum (uint8_t end_file, uint16_t size, uint16_t *spectrum, uint8_t atomic);
+void writeZeroes (uint8_t end_file, uint16_t size, uint8_t atomic);
 uint8_t closeFile(uint8_t atomic);
 uint32_t searchNextFreeCluster (uint32_t startCluster,uint8_t atomic);
 //void memoryStatistics (void);
