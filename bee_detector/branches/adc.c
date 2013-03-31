@@ -25,7 +25,8 @@ ISR(ADC_INT0)
 //	const prog_int16_t *window = tbl_window;
 	static uint16_t adc_i = 0; 
 	static uint8_t adc_deci = 0;
-	int16_t v, vv;
+	int16_t v;
+	//, vv;
 //  urobit kalibraciu 0 ako jedno cele meranie a vypocitat priemernu hodnotu - ulozit do eeprom?	
 //	v = ADCA.CH0RES - 0x0874;	// 0V = 0x0C8... 1/2 je o cca 200dec vyssie ako 0x7FF
 	v = ADCA.CH0RES;			// 0V = 0x0C8... 1/2 je o cca 200dec vyssie ako 0x7FF
@@ -110,7 +111,6 @@ uint8_t ADC_chswitch(uint8_t channel0, uint8_t channel1)
 
 void ADC_Init(void)
 {
-	uint8_t ii=0;
 	ADC0_PORT.DIR = 0x00; 						// configure a2d port (PORTF) as input so we can receive analog signals
 	ADC1_PORT.DIR = 0x00; 						// configure a2d port (PORTF) as input so we can receive analog signals
 	PORTCFG.MPCMASK = 0xFF;						// copy settings to all pins

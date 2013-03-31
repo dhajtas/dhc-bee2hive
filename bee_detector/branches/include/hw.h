@@ -15,7 +15,7 @@ typedef struct MASK_struct {
 	uint8_t SHT0_bm;
 	uint8_t SHT1_bm;
 	uint8_t DS;
-}, MASK_t;
+} MASK_t;
 
 #define AVR_ENTER_CRITICAL_REGION( ) uint8_t volatile saved_sreg = SREG; \
                                      cli();
@@ -30,7 +30,7 @@ extern MASK_t Mask;
 
 #define BIGAVR				0
 #define RSCOM				0
-
+//#define F_CPU				32000000
 //Status
 
 #define RTC_UPDATE			0x40

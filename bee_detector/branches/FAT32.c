@@ -744,6 +744,57 @@ void writeSpectrum (uint8_t end_file, uint16_t size, uint16_t *spectrum, uint8_t
 	}
 }
 
+void writeZeroes (uint8_t end_file, uint16_t size, uint8_t atomic)
+{
+	uint8_t error, i;
+	uint32_t cluster, prevCluster;
+	uint16_t *spect_buffer;
+
+	spect_buffer = (uint16_t*)buffer;
+
+	startBlock = getFirstSector(AppendStartCluster) + AppendStartSector;
+
+	// add possibility of appending to the half full sector - i
+	// for now write only sector by sector (full sectors)
+
+	for(i=0; i<size; i++)
+	{
+		if(!end_file)
+		{
+			spect_buffer[BlockCounter>>1] = 0x00;// move text to buffer
+			FileSize += 2;
+			BlockCounter += 2;
+		}
+		if((BlockCounter == 512)||(end_file))		//max size of the block or ending the file
+		{
+			BlockCounter = 0;
+			error = SD_writeSingleBlock(startBlock, atomic);	// write buffer to file
+			if(!end_file)									// if ending file no need to search for next Sector/Cluster
+			{
+				AppendStartSector++;
+				if (AppendStartSector == SectorPerCluster)
+				{
+					AppendStartSector = 0;
+					prevCluster = AppendStartCluster;
+
+					cluster = searchNextFreeCluster(prevCluster, atomic); 	//look for a free cluster starting from the current cluster
+					
+					if(cluster == 0)
+					{
+						printf_P(PSTR("/n NO FREE CLUSTER!"));
+						return;
+					}
+
+					getSetNextCluster(prevCluster, SET, cluster, atomic);
+					getSetNextCluster(cluster, SET, EOF, atomic);   		//last cluster of the file, marked EOF
+
+					AppendStartCluster = cluster;
+				}
+			}
+		}
+	}
+}
+
 //************************************************************************************
 //Function: to close a file in FAT32 format in the root directory if given 
 //			file name does not exist; if the file already exists then append the data

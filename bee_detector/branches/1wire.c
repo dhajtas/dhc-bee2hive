@@ -1,11 +1,12 @@
 #include <avr/io.h>
-#include <avr/delay.h>
+#include <util/delay.h>
 #include <avr/eeprom.h>
+#include <avr/interrupt.h>
 #include <inttypes.h>
 
-#include "1wire.h"
-#include "at25256.h"
-#include "routines.h"
+#include "include/hw.h"
+#include "include/1wire.h"
+//#include "routines.h"
 
 #define		OW_PORT		PORT(I2C_P)
 
@@ -13,7 +14,7 @@
 //		Global variables
 //-----------------------------------------------------------------------------------------------//
 
-OWIRE OWbuff[OW_NUM];
+OWIRE_t OWbuff[OW_NUM];
 uint8_t EE_ow_mask EEMEM;
 uint8_t EE_ow_error EEMEM;
 OWIRE_t EE_ow_id[OW_NUM] EEMEM;
@@ -48,7 +49,6 @@ void clr_owBuffer(void)
 
 uint8_t GetDallasID(uint8_t j)
 {
- MEMPTR ptr;
  uint8_t l, pokus = 0;
  uint8_t dallas,error;
 					//??????'vysledkom je 128bytov v buffry (pole[16,8]), vzdy 8x1.byte,8x2.byte....
@@ -76,14 +76,14 @@ uint8_t GetDallasID(uint8_t j)
 	if(!j)				//ak ma zapisovat do pamate
 	{
 							//maska dallasov do pamate
-		eeprom_write_byte(EE_ow_mask, dallas);
+		eeprom_write_byte(&EE_ow_mask, dallas);
 
 							//maska CRC chyb do pamate
-		eeprom_write_byte(EE_ow_error,error);		//low byte
+		eeprom_write_byte(&EE_ow_error,error);		//low byte
 
 		for(l=0;l<OW_NUM;l++)
 		{
-			eeprom_write_block(OWbuff[l], EE_ow_id[l], 8);
+			eeprom_write_block(&OWbuff[l], &EE_ow_id[l], 8);
 	 	}
 	}
 
@@ -92,7 +92,7 @@ uint8_t GetDallasID(uint8_t j)
 
 //-----------------------------------------------------------
 
-void owire(uint8_t command, port_width dallas)		//, OWIRE buffer[16], uint8_t size, uint8_t power)
+void owire(uint8_t command, uint8_t dallas)		//, OWIRE buffer[16], uint8_t size, uint8_t power)
 {
 // register uint8_t l;			//owire len zabezpecuje zaciatok komunikacie...
 
@@ -116,7 +116,7 @@ void owire(uint8_t command, port_width dallas)		//, OWIRE buffer[16], uint8_t si
 
 //-----------------------------------------------------------
 
-void ow_outp(register uint8_t data, register port_width dallas)
+void ow_outp(register uint8_t data, register uint8_t dallas)
 {
   register uint8_t l;
 
@@ -129,7 +129,7 @@ void ow_outp(register uint8_t data, register port_width dallas)
 
 //-----------------------------------------------------------
 
-void ow_inp(OWIRE *buffer,register uint8_t x, register uint8_t dallas)		// bude iba 1 dallas!!
+void ow_inp(OWIRE_t *buffer,register uint8_t x, register uint8_t dallas)		// bude iba 1 dallas!!
 {
  register uint8_t data;
  register uint8_t l,m;
@@ -146,7 +146,7 @@ void ow_inp(OWIRE *buffer,register uint8_t x, register uint8_t dallas)		// bude 
 				buffer[0].data[x] |= 0x80;			//pripisanie nulteho bitu (prave zapisovany dallas)
 
 			data <<=1;						//posun prijatych dat o 1 do ????prava???? do lava??? -> nasl. dallas
-//		}
+		}
 	}
 }
 
@@ -169,7 +169,7 @@ uint8_t ow_inp_1(uint8_t dallas)
 
 //-----------------------------------------------------------
 
-uint8_t CheckCRC_8(OWIRE *buffer, uint8_t dallas, uint8_t count)	//uint8_t base, na zaciatok listu ak spolocne aj pre CRC_16
+uint8_t CheckCRC_8(OWIRE_t *buffer, uint8_t dallas, uint8_t count)	//uint8_t base, na zaciatok listu ak spolocne aj pre CRC_16
 {
  uint8_t CRCbuf;	//ak bude spolocny check aj pre CRC_16 tak uint16_t
  uint8_t error = 0;
@@ -210,45 +210,45 @@ uint8_t CheckCRC_8(OWIRE *buffer, uint8_t dallas, uint8_t count)	//uint8_t base,
 
 //-----------------------------------------------------------
 
-uint8_t CRC_8(uint8_t CRC, uint8_t x)
+uint8_t CRC_8(uint8_t crc, uint8_t x)
 {
  uint8_t l;
 
  	for(l=0;l<8;l++)
  	{
- 		if((x^CRC) & 0x01)
+ 		if((x^crc) & 0x01)
  		{
-			CRC ^= 0x18;
-			CRC >>= 1;
-			CRC |= 0x80;
+			crc ^= 0x18;
+			crc >>= 1;
+			crc |= 0x80;
 		}
 		else
-			CRC >>= 1;
+			crc >>= 1;
 		x >>= 1;
 	}
-	return(CRC);
+	return(crc);
 }
 
 //-----------------------------------------------------------
 
-uint16_t CRC_16(uint16_t CRC, uint8_t x)
+uint16_t CRC_16(uint16_t crc, uint8_t x)
 {
  uint16_t l;
 
  	for(l=0;l<8;l++)
  	{
- 		if((x^CRC) & 0x0001)
+ 		if((x^crc) & 0x0001)
  		{
-			CRC ^= 0x4002;
-			CRC >>= 1;
-			CRC |= 0x8000;
+			crc ^= 0x4002;
+			crc >>= 1;
+			crc |= 0x8000;
 		}
 		else
-			CRC >>= 1;
+			crc >>= 1;
 		x >>= 1;
 
  	}
-	return(CRC);
+	return(crc);
 }
 
 //-----------------------------------------------------------
@@ -337,16 +337,17 @@ uint8_t ow_reset(register uint8_t dallas)
 void ow_setprt(register uint8_t dallas)
 {
 	PORTCFG.MPCMASK = dallas;
-	OW_PORT.PIN0CTRL = PULLUP_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
+	OW_PORT.PIN0CTRL = PORT_OPC_PULLUP_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
 	OW_PORT.DIRSET = dallas;		//wired AND output + pullup... len pre xmega
 	OW_PORT.OUTSET = dallas;	
-	
+	return;
 }
 
 void ow_rstprt(register uint8_t dallas)
 {
 	PORTCFG.MPCMASK = dallas;
-	OW_PORT.PIN0CTRL = WIREDANDPULL_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
+	OW_PORT.PIN0CTRL = PORT_OPC_WIREDANDPULL_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
 	OW_PORT.DIRSET = dallas;		//wired AND output + pullup... len pre xmega
 	OW_PORT.OUTSET = dallas;
+	return;
 }

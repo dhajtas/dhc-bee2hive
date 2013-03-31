@@ -2,9 +2,9 @@
 #include <avr/io.h>
 #include <inttypes.h>
 
-#include "data_max.h"
-#include "1wire.h"
-#include "ds1820.h"
+#include "include/hw.h"
+#include "include/1wire.h"
+#include "include/ds1820.h"
 
 
 void ConvertT(uint8_t dallas)		//zaciatok merania pre DS1820

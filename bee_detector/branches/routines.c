@@ -197,16 +197,16 @@ void generate_mask_bm(void)
 							switch(i)
 							{
 								case 6:
-								Mask.SHT0_bm = mask_bm;
+									Mask.SHT0_bm = mask_bm;
 								case 0:
-								mask_bm = 0;
-								break;
+									mask_bm = 0;
+									break;
 								case 1:
 								case 5:
 								case 7:
 								case 11:
-								mask_bm = mask_bm >> 1;
-								break;
+									mask_bm = mask_bm >> 1;
+									break;
 								default : break;
 							}
 
@@ -218,7 +218,7 @@ void generate_mask_bm(void)
 							}
 							mask = mask >> 1;
 						}
-						Mask.SHT1_bm = mask_bm	
+						Mask.SHT1_bm = mask_bm;	
 }
 
 
