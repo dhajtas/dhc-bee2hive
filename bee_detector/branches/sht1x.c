@@ -129,7 +129,7 @@ void SHT_write_stat(uint8_t status)
 	{
 		SHT_TRX_start(y);
 		SHT_send8_t(SHT_WRITE_STAT, y);
-//??		SHT_sw_data_dir(y,0x01);
+		SHT_sw_data_dir(y,0x01);
 		_delay_us(1);
 		SHT_send8_t(status, y);
 	}
@@ -147,7 +147,7 @@ void SHT_reset(void)		//converted
 	
 	for(y=0;y<2;y++)			//SHT autodetect ?
 	{
-//??			SHT_sw_data_dir(y,0x01);
+			SHT_sw_data_dir(y,0x01);
 			SHT_connection_reset(y);
 			_delay_us(2);
 			SHT_TRX_start(y);
@@ -200,7 +200,7 @@ uint8_t SHT_send8_t(uint8_t data, uint8_t y)		//converted
 		SHT_send_bit((data&0x80),y);
 		data=data<<1;
 	}
-//??	SHT_sw_data_dir(y,0x00);
+	SHT_sw_data_dir(y,0x00);
 //	delay_us(1);
 	return(SHT_rcv_bit(y));		//read ACK
 }
@@ -221,10 +221,10 @@ uint8_t SHT_rcv8_t(uint8_t y, uint8_t ack, uint8_t *data)		//ack = 1 - no ACK, t
 			d = d>>1;
 		}
 	}
-//??	SHT_sw_data_dir(y,0x01);
+	SHT_sw_data_dir(y,0x01);
 	_delay_us(2);
 	SHT_send_bit(ack,y);
-//??	SHT_sw_data_dir(y,0x00);
+	SHT_sw_data_dir(y,0x00);
 	return(data);
 }
 
@@ -353,8 +353,9 @@ void SHT_wait(uint8_t y)			//converted
 void SHT_init(void)				//converted
 {
 	PORTCFG.MPCMASK = SDA_bm;
-	SHT_PORT.PIN0CTRL = PORT_OPC_WIREDANDPULL_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
-	SHT_PORT.DIRSET  = SDA_bm;		//???,
+//	SHT_PORT.PIN0CTRL = PORT_OPC_WIREDANDPULL_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
+	SHT_PORT.PIN0CTRL = PORT_OPC_PULLUP_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
+	SHT_PORT.DIRCLR  = SDA_bm;		//???,
 	SHT_PORT.DIRSET  = SCL_bm;		//out 0 for SCK
 	SHT_PORT.OUTCLR = SCL_bm;
 
@@ -372,34 +373,16 @@ void SHT_sw_data_dir(uint8_t y, uint8_t dir)		//converted
 {	//podla masky - SHT, ktore nemeraju by mali byt LO? kontrola vo SHT_wait - tu neriesit!
 	// kedze wired and cfg je pouzita, smer netreba prepinat vobec... staci poslat data = 1
 	
-	SHT_PORT.OUTSET = SDA_bm;
+//	SHT_PORT.OUTSET = SDA_bm;
 	
-	/*
-	switch(y)
-	{
-		case 0:
+
 			if(dir)
 			{
-				DDRE  |= 0x04;			//output for data,
+				SHT_PORT.DIRSET = SDA_bm;			//output for data,
 			}
 			else
 			{
-				DDRE  &= 0xFB;			//pull up + input for data,
-				PORTE |= 0x04;			//
+				SHT_PORT.DIRCLR = SDA_bm;			//pull up + input for data,
 			}
-			break;
-		case 1:
-			if(dir)
-			{
-				DDRF  |=0x10;		//output for data
-			}
-			else
-			{
-				DDRF  &= 0xEF;			//pull up + input for data
-				PORTF |= 0x10;
-			}
-			break;
-	}
-	*/
 	return;
 }
