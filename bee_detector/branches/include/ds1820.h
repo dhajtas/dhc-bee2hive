@@ -18,7 +18,7 @@ void ConvertT(uint8_t);
 
 uint8_t Read1820(uint8_t);
 
-uint16_t ReadTemp(uint8_t);
+int16_t ReadTemp(uint8_t);
 
 
 

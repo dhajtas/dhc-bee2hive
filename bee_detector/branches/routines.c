@@ -47,20 +47,20 @@ uint8_t readCfgFile(uint8_t *filename_dat, uint8_t atomic)
 					case	'S':
 								k++;
 								switch(buffer[k])
-                {
-                  case 'T':
+								{
+								case 'T':
                              k++;
                              time.h = getDec((uint8_t*)buffer+k);
                              time.m = getDec((uint8_t*)buffer+k+2);
                              time.s = getDec((uint8_t*)buffer+k+4);
                              break;
-                  case 'D':
+								case 'D':
                              k++;
                              date.d = getDec(&buffer[k]);
 									           date.m = getDec(&buffer[k+2]);
                              date.y = 20 + getDec(&buffer[k+4]);
                              break;
-								  case 'F':
+								case 'F':
                              k = k+2;
                              for(i=0;i<13;i++)
                              {
@@ -70,9 +70,9 @@ uint8_t readCfgFile(uint8_t *filename_dat, uint8_t atomic)
                              }
                              k = k+i;
                              break;
-                  case 'M':    //mask definitions: M - mic only, S - SHT sensor only, T - DS1820 1-wire sensor, X - Mic+SHT, '-' - nothing
+								case 'M':    //mask definitions: M - mic only, S - SHT sensor only, T - DS1820 1-wire sensor, X - Mic+SHT, '-' - nothing
                              k++;
-                             for(i=0;i<13;i++)
+                             for(i=0;i<12;i++)
                              {
                                Mask.SHT = Mask.SHT<<1;
                                Mask.MIC = Mask.MIC<<1;

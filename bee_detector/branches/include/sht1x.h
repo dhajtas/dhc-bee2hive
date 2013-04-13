@@ -52,7 +52,7 @@ void SHT_read_stat(void);
 
 void SHT_write_stat(uint8_t);
 
-void SHT_reset(void);		//bolo uint8_t
+uint8_t SHT_reset(uint8_t);		//bolo uint8_t
 
 void SHT_connection_reset(uint8_t);
 

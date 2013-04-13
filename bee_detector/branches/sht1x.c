@@ -138,42 +138,22 @@ void SHT_write_stat(uint8_t status)
 
 //------------------------------------------------------------------------------
 
-void SHT_reset(void)		//converted
+uint8_t SHT_reset(uint8_t y)		//converted
 {
-	uint8_t y, x, d;
-	uint16_t msk=0x0001;
+	uint8_t d;
 
-	Mask.SHT = Mask.MIC;
+
 	
-	for(y=0;y<2;y++)			//SHT autodetect ?
-	{
-			SHT_sw_data_dir(y,0x01);
-			SHT_connection_reset(y);
-			_delay_us(2);
-			SHT_TRX_start(y);
-			d = SHT_send8_t(SHT_RESET, y);
-			for(x=0;x<8;x++)
-			{
-				switch(x)
-				{
-					case 1:
-					case 6:
-							break;
-					default:
-							if((d & 0x01))	//if ACK not received
-								Mask.SHT &= ~msk;		//vymaz pripadny bit z masky
-							msk = msk<<1;
-							break;	
-				}					
-				d = d >> 1;
-			}
-	}
+	SHT_sw_data_dir(y,0x01);
+	SHT_connection_reset(y);
+	_delay_us(2);
+	SHT_TRX_start(y);
+	d = SHT_send8_t(SHT_RESET, y);
 
-	generate_mask_bm();
 	
 	_delay_ms(50);
 //	SHT_read_stat();
-	return;
+	return(d);
 }
 
 //------------------------------------------------------------------------------
@@ -352,6 +332,9 @@ void SHT_wait(uint8_t y)			//converted
 
 void SHT_init(void)				//converted
 {
+	uint8_t d, x, y;
+	uint16_t msk=0x0001;
+
 	PORTCFG.MPCMASK = SDA_bm;
 //	SHT_PORT.PIN0CTRL = PORT_OPC_WIREDANDPULL_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
 	SHT_PORT.PIN0CTRL = PORT_OPC_PULLUP_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
@@ -359,8 +342,29 @@ void SHT_init(void)				//converted
 	SHT_PORT.DIRSET  = SCL_bm;		//out 0 for SCK
 	SHT_PORT.OUTCLR = SCL_bm;
 
+	Mask.SHT = Mask.MIC;
+
 	_delay_ms(20);
-	SHT_reset();
+	for(y=0;y<2;y++)
+	{
+		d = SHT_reset(y);
+		for(x=0;x<8;x++)
+		{
+			switch(x)
+			{
+				case 1:
+				case 6:
+					break;
+				default:
+					if((d & 0x01))	//if ACK not received
+						Mask.SHT &= ~msk;		//vymaz pripadny bit z masky
+					msk = msk<<1;
+					break;
+			}
+			d = d >> 1;
+		}
+	}
+	generate_mask_bm();
 	return;
 }
 

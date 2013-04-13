@@ -52,7 +52,7 @@ int main(void)
 {
  	uint8_t x, save_count = 0, error = 0, pin0, pin1;
  	uint8_t write_restart = 0;
-	uint16_t ow_temp = 0;
+	int16_t ow_temp = 0;
  	//	uint16_t i;
 
  	uint8_t filename[13];
@@ -121,11 +121,10 @@ int main(void)
 		while(!(ADCA.INTFLAGS));	//???					// test if pending conversion is finished...
 		ADCA.INTFLAGS = 0xFF;								// clear any int flags
 		ADC_chswitch(x+2,x+3);								//switch to other channel pair
-		if(x<5)												// if last pair do not start new conversion
-		{
-			ADCA.CH1.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;		// enable interrupt & free running mode
-			ADCA.CTRLB |= ADC_FREERUN_bm;						//enable freerunning... (if in freerunning mode)
-		}		
+		ADCA.CH1.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;		// enable interrupt & free running mode
+		ADCA.CTRLB |= ADC_FREERUN_bm;						//enable freerunning... (if in freerunning mode)
+		pin0 = 0;
+		pin1 = 1;
 	}
 	
 	eeprom_write_block(ADC_Cal, EE_cal, 24);
@@ -255,11 +254,11 @@ int main(void)
 				 	{
 						 if(Mask.SHT)
 						 {
-							SHT_meas(SHT_MEAS_TEMP);						//meraj teplotu a vlhkost na SHT
-							SHT_meas(SHT_MEAS_HUM);
-							writeSpectrum(0,sizeof(SHT_t)*12,(uint16_t*)SHTbuff,0);	// uloz cely SHT buffer (60 bytov) (este ostava 1988 bytov do 2 clustrov )
+//							SHT_meas(SHT_MEAS_TEMP);						//meraj teplotu a vlhkost na SHT
+//							SHT_meas(SHT_MEAS_HUM);
+//							writeSpectrum(0,sizeof(SHT_t)*12,(uint16_t*)SHTbuff,0);	// uloz cely SHT buffer (60 bytov) (este ostava 1988 bytov do 2 clustrov )
 						 }	
-						 else
+//						 else
 						 	writeZeroes(0,sizeof(SHT_t)*12,0);						// uloz nuly ak nie je SHT (60 bytov) (este ostava 1988 bytov do 2 clustrov )				
 						if(Mask.DS)
 						{
@@ -345,7 +344,7 @@ int main(void)
 					 			SD_Status |= SD_MEASUREMENT;
 				 			}
 				 			Status |= MEASUREMENT;
-							SHT_meas_dummy();
+//tst							SHT_meas_dummy();
 				 	//							old_m = Time.m;
 				 			LED_PORT.OUTSET = _BV(LED2);
 				 	case 0:	break;

@@ -73,7 +73,7 @@ uint8_t GetDallasID(uint8_t j)
 		return(0);
 	}
 
-	if(!j)				//ak ma zapisovat do pamate
+	if(j)				//ak ma zapisovat do pamate
 	{
 							//maska dallasov do pamate
 		eeprom_write_byte(&EE_ow_mask, dallas);
@@ -129,7 +129,7 @@ void ow_outp(register uint8_t data, register uint8_t dallas)
 
 //-----------------------------------------------------------
 
-void ow_inp(OWIRE_t *buffer,register uint8_t x, register uint8_t dallas)		// bude iba 1 dallas!!
+void ow_inp(OWIRE_t *buffer_ow,register uint8_t x, register uint8_t dallas)		// bude iba 1 dallas!!
 {
  register uint8_t data;
  register uint8_t l,m;
@@ -140,10 +140,10 @@ void ow_inp(OWIRE_t *buffer,register uint8_t x, register uint8_t dallas)		// bud
 		data = data & dallas;
 		for(m=OW_NUM;m>0;m--)
 		{
-			buffer[m-1].data[x] >>=1;				//priprava dat v buffri na prichod nasl.bitu
-			buffer[m-1].data[x] &=0xFE;				//vynuluj nulty bit (co ak bol 1?)
+			buffer_ow[m-1].data[x] >>=1;				//priprava dat v buffri na prichod nasl.bitu
+			buffer_ow[m-1].data[x] &=0xFE;				//vynuluj nulty bit (co ak bol 1?)
 			if(data)
-				buffer[0].data[x] |= 0x80;			//pripisanie nulteho bitu (prave zapisovany dallas)
+				buffer_ow[0].data[x] |= 0x80;			//pripisanie nulteho bitu (prave zapisovany dallas)
 
 			data <<=1;						//posun prijatych dat o 1 do ????prava???? do lava??? -> nasl. dallas
 		}
@@ -169,7 +169,7 @@ uint8_t ow_inp_1(uint8_t dallas)
 
 //-----------------------------------------------------------
 
-uint8_t CheckCRC_8(OWIRE_t *buffer, uint8_t dallas, uint8_t count)	//uint8_t base, na zaciatok listu ak spolocne aj pre CRC_16
+uint8_t CheckCRC_8(OWIRE_t *buffer_ow, uint8_t dallas, uint8_t count)	//uint8_t base, na zaciatok listu ak spolocne aj pre CRC_16
 {
  uint8_t CRCbuf;	//ak bude spolocny check aj pre CRC_16 tak uint16_t
  uint8_t error = 0;
@@ -185,7 +185,7 @@ uint8_t CheckCRC_8(OWIRE_t *buffer, uint8_t dallas, uint8_t count)	//uint8_t bas
 // 			{
  				for(l=0;l<count;l++)
  				{
- 					data = buffer[m].data[l];
+ 					data = buffer_ow[m].data[l];
  					//(uint8_t)
 					CRCbuf = CRC_8((uint8_t)CRCbuf,(uint8_t)data);
  				}
