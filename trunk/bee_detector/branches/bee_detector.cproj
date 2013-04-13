@@ -98,6 +98,11 @@
         <avrgcc.common.outputfiles.srec>True</avrgcc.common.outputfiles.srec>
         <avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>True</avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>
         <avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>True</avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>
+        <avrgcc.compiler.symbols.DefSymbols>
+          <ListValues>
+            <Value>F_CPU=32000000</Value>
+          </ListValues>
+        </avrgcc.compiler.symbols.DefSymbols>
         <avrgcc.compiler.directories.IncludePaths>
           <ListValues>
             <Value>../../Common_libs</Value>
@@ -125,9 +130,9 @@
     </PreBuildEvent>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="1wire.c">
+    <Compile Include="1wire.c">
       <SubType>compile</SubType>
-    </None>
+    </Compile>
     <Compile Include="adc.c">
       <SubType>compile</SubType>
     </Compile>
@@ -137,9 +142,9 @@
     <None Include="dma_driver.c">
       <SubType>compile</SubType>
     </None>
-    <None Include="ds1820.c">
+    <Compile Include="ds1820.c">
       <SubType>compile</SubType>
-    </None>
+    </Compile>
     <Compile Include="FAT32.c">
       <SubType>compile</SubType>
     </Compile>
@@ -197,9 +202,9 @@
     <Compile Include="SD_routines.c">
       <SubType>compile</SubType>
     </Compile>
-    <None Include="sht1x.c">
+    <Compile Include="sht1x.c">
       <SubType>compile</SubType>
-    </None>
+    </Compile>
     <Compile Include="spi.c">
       <SubType>compile</SubType>
     </Compile>
