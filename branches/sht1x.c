@@ -339,8 +339,9 @@ void SHT_init(void)				//converted
 //	SHT_PORT.PIN0CTRL = PORT_OPC_WIREDANDPULL_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
 	SHT_PORT.PIN0CTRL = PORT_OPC_PULLUP_gc;	// wired-and and pull-up set for all SDA lines (should be output???)
 	SHT_PORT.DIRCLR  = SDA_bm;		//???,
-	SHT_PORT.DIRSET  = SCL_bm;		//out 0 for SCK
-	SHT_PORT.OUTCLR = SCL_bm;
+	SHT_PORT.OUTSET  = SDA_bm;		// after dir switch data will be one - idle
+	SHT_PORT.DIRSET  = SCL_bm;		//out ???0 for SCK
+	SHT_PORT.OUTSET = SCL_bm;		// set clk to one... (idle)
 
 	Mask.SHT = Mask.MIC;
 

@@ -612,7 +612,7 @@ uint8_t openFile(uint8_t *fileName, uint8_t flag, uint8_t atomic)
 	}
 	else
 	{
-		FileSize = dir->fileSize;
+//		FileSize = dir->fileSize;  // uz fo findFiles
 #if BIGAVR == 1		
 		printf_P(PSTR(" FILE EXISTS, APPENDING DATA...\n")); 
 #endif			//BIGAVR
@@ -636,9 +636,7 @@ uint8_t openFile(uint8_t *fileName, uint8_t flag, uint8_t atomic)
 	AppendStartCluster = cluster;
 	AppendStartSector = (FileSize - (clusterCount * SectorPerCluster * BytesPerSector)) / BytesPerSector; 
 
-	BlockCounter = 0;
-
-
+	BlockCounter = 0;	//zmenit do buducna na presny vypocet...
 	return(0);
 }
 
@@ -653,7 +651,7 @@ void writeFile (uint8_t atomic)
 {
 	uint8_t error;
 	uint32_t cluster, prevCluster;
-
+	
 		printf_P(PSTR("\n WRITING..."));
 	
 		startBlock = getFirstSector(AppendStartCluster) + AppendStartSector;
@@ -665,6 +663,7 @@ void writeFile (uint8_t atomic)
 //		FileSize += RAM_Read_block(&buffer[0], BytesPerSector, atomic);
 
 		error = SD_writeSingleBlock(startBlock, atomic);
+//		allocNextSector(atomic);
 		AppendStartSector++;
 		if (AppendStartSector == SectorPerCluster)
 		{
@@ -672,7 +671,7 @@ void writeFile (uint8_t atomic)
 			prevCluster = AppendStartCluster;
 
 			cluster = searchNextFreeCluster(prevCluster, atomic); 	//look for a free cluster starting from the current cluster
-		
+			
 			if(cluster == 0)
 			{
 				printf_P(PSTR("/n NO FREE CLUSTER!"));
@@ -720,57 +719,7 @@ void writeSpectrum (uint8_t end_file, uint16_t size, uint16_t *spectrum, uint8_t
 			error = SD_writeSingleBlock(startBlock, atomic);	// write buffer to file
 			if(!end_file)									// if ending file no need to search for next Sector/Cluster
 			{
-				AppendStartSector++;
-				if (AppendStartSector == SectorPerCluster)
-				{
-					AppendStartSector = 0;
-					prevCluster = AppendStartCluster;
-
-					cluster = searchNextFreeCluster(prevCluster, atomic); 	//look for a free cluster starting from the current cluster
-		
-					if(cluster == 0)
-					{
-						printf_P(PSTR("/n NO FREE CLUSTER!"));
-						return;
-					}
-
-					getSetNextCluster(prevCluster, SET, cluster, atomic);
-					getSetNextCluster(cluster, SET, EOF, atomic);   		//last cluster of the file, marked EOF
-
-					AppendStartCluster = cluster;
-				}
-			}
-		}
-	}
-}
-
-void writeZeroes (uint8_t end_file, uint16_t size, uint8_t atomic)
-{
-	uint8_t error, i;
-	uint32_t cluster, prevCluster;
-	uint16_t *spect_buffer;
-
-	spect_buffer = (uint16_t*)buffer;
-
-	startBlock = getFirstSector(AppendStartCluster) + AppendStartSector;
-
-	// add possibility of appending to the half full sector - i
-	// for now write only sector by sector (full sectors)
-
-	for(i=0; i<size; i++)
-	{
-		if(!end_file)
-		{
-			spect_buffer[BlockCounter>>1] = 0x00;// move text to buffer
-			FileSize += 2;
-			BlockCounter += 2;
-		}
-		if((BlockCounter == 512)||(end_file))		//max size of the block or ending the file
-		{
-			BlockCounter = 0;
-			error = SD_writeSingleBlock(startBlock, atomic);	// write buffer to file
-			if(!end_file)									// if ending file no need to search for next Sector/Cluster
-			{
+//				allocNextSector(atomic);
 				AppendStartSector++;
 				if (AppendStartSector == SectorPerCluster)
 				{
@@ -792,6 +741,139 @@ void writeZeroes (uint8_t end_file, uint16_t size, uint8_t atomic)
 				}
 			}
 		}
+	}
+}
+
+void writeBlock (uint8_t end_file, uint16_t size, uint8_t *spectrum, uint8_t atomic)
+{
+	uint8_t error;
+	uint16_t i;
+	uint32_t cluster, prevCluster;
+	uint8_t *spect_buffer;
+
+	spect_buffer = (uint8_t*)buffer;
+
+	startBlock = getFirstSector(AppendStartCluster) + AppendStartSector;
+
+	// add possibility of appending to the half full sector - i
+	// for now write only sector by sector (full sectors)
+
+	for(i=0; i<size; i++)
+	{
+		if(!end_file)
+		{
+			spect_buffer[BlockCounter] = spectrum[i];// move text to buffer
+			FileSize++;
+			BlockCounter++;
+		}
+		if((BlockCounter == 512)||(end_file))		//max size of the block or ending the file
+		{
+			BlockCounter = 0;
+			error = SD_writeSingleBlock(startBlock, atomic);	// write buffer to file
+			if(!end_file)									// if ending file no need to search for next Sector/Cluster
+			{
+//				allocNextSector(atomic);
+				AppendStartSector++;
+				if (AppendStartSector == SectorPerCluster)
+				{
+					AppendStartSector = 0;
+					prevCluster = AppendStartCluster;
+					cluster = searchNextFreeCluster(prevCluster, atomic); 	//look for a free cluster starting from the current cluster
+						
+					if(cluster == 0)
+					{
+						printf_P(PSTR("/n NO FREE CLUSTER!"));
+						return;
+					}
+
+					getSetNextCluster(prevCluster, SET, cluster, atomic);
+					getSetNextCluster(cluster, SET, EOF, atomic);   		//last cluster of the file, marked EOF
+
+					AppendStartCluster = cluster;
+				}
+			}
+		}
+	}
+}
+
+
+
+
+void writeZeroes (uint8_t end_file, uint16_t size, uint8_t atomic)
+{
+	uint8_t error;
+	uint16_t i;
+	uint32_t cluster, prevCluster;
+	uint8_t *spect_buffer;
+
+	spect_buffer = (uint8_t*)buffer;
+
+	startBlock = getFirstSector(AppendStartCluster) + AppendStartSector;
+
+	// add possibility of appending to the half full sector - i
+	// for now write only sector by sector (full sectors)
+
+	for(i=0; i<size; i++)
+	{
+		if(!end_file)
+		{
+			spect_buffer[BlockCounter] = 0x00;// move text to buffer
+			FileSize++;
+			BlockCounter++;
+		}
+		if((BlockCounter == 512)||(end_file))		//max size of the block or ending the file
+		{
+			BlockCounter = 0;
+			error = SD_writeSingleBlock(startBlock, atomic);	// write buffer to file
+			if(!end_file)									// if ending file no need to search for next Sector/Cluster
+			{
+//				allocNextSector(atomic);
+				AppendStartSector++;
+				if (AppendStartSector == SectorPerCluster)
+				{
+					AppendStartSector = 0;
+					prevCluster = AppendStartCluster;
+
+					cluster = searchNextFreeCluster(prevCluster, atomic); 	//look for a free cluster starting from the current cluster
+					
+					if(cluster == 0)
+					{
+						printf_P(PSTR("/n NO FREE CLUSTER!"));
+						return;
+					}
+
+					getSetNextCluster(prevCluster, SET, cluster, atomic);
+					getSetNextCluster(cluster, SET, EOF, atomic);   		//last cluster of the file, marked EOF
+
+					AppendStartCluster = cluster;
+				}
+			}
+		}
+	}
+}
+
+void allocNextSector(uint8_t atomic)
+{
+	uint32_t cluster, prevCluster;
+
+	AppendStartSector++;
+	if (AppendStartSector == SectorPerCluster)
+	{
+		AppendStartSector = 0;
+		prevCluster = AppendStartCluster;
+
+		cluster = searchNextFreeCluster(prevCluster, atomic); 	//look for a free cluster starting from the current cluster
+		
+		if(cluster == 0)
+		{
+			printf_P(PSTR("/n NO FREE CLUSTER!"));
+			return;
+		}
+
+		getSetNextCluster(prevCluster, SET, cluster, atomic);
+		getSetNextCluster(cluster, SET, EOF, atomic);   		//last cluster of the file, marked EOF
+
+		AppendStartCluster = cluster;
 	}
 }
 

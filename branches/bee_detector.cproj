@@ -130,7 +130,10 @@
     </PreBuildEvent>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="1wire.c">
+    <None Include="1wire.c">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="1wire_single.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="adc.c">
@@ -152,6 +155,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\1wire.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\1wire_single.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\adc.h">

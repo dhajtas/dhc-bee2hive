@@ -93,7 +93,7 @@ void RTC_Init(void)
 	while(OSC.STATUS & OSC_RC32KRDY_bm);	// wait until stable operation of the 32kHz internal oscillator
 	CLK.RTCCTRL = CLK_RTCSRC_RCOSC_gc | CLK_RTCEN_bm;		// prescaler on internal 32kHz oscillator as RTC clk source
 	
-	RTC.PER = 60;							// count 60 seconds ???
+	RTC.PER = 59;							// count 60 seconds ??? vyzera, ze pri 60 kazda minuta trva 61 sekund :-)
 	RTC.CTRL = RTC_PRESCALER_DIV1024_gc;	// start the RTC at 1Hz clk
 
 	while(RTC.STATUS);						// wait for update

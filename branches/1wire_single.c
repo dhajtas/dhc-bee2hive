@@ -5,7 +5,7 @@
 #include <inttypes.h>
 
 #include "include/hw.h"
-#include "include/1wire.h"
+#include "include/1wire_single.h"
 //#include "routines.h"
 
 #define		OW_PORT		PORT(I2C_P)
@@ -26,6 +26,7 @@ uint8_t ow_Init(void)
  register uint8_t maskOut;
 
 	clr_owBuffer();
+	ow_rstprt(OW_bm);
  	maskOut = (ow_reset(OW_bm) & OW_bm);
 // 	ow_rstprt(maskOut);		//pre xmega netreba ak wired and setting pouzite 
  	return(maskOut);
@@ -35,13 +36,10 @@ uint8_t ow_Init(void)
 
 void clr_owBuffer(void)
 {
- uint8_t l,m;
+ uint8_t m;
 
- 	for(l=0;l<OW_NUM;l++)
- 	{
  		for(m=0;m<8;m++)
- 			OWbuff[l].data[m]=0x00;
- 	}
+ 			OWbuff[0].data[m]=0x00;
 }
 
 //-----------------------------------------------------------
@@ -53,19 +51,19 @@ uint8_t GetDallasID(uint8_t j)
 					//??????'vysledkom je 128bytov v buffry (pole[16,8]), vzdy 8x1.byte,8x2.byte....
 					//nevolat Write -> problem s ptrlast. radsej priamo volat Mem_WRITE a Mem_WAIT!
 	dallas = ow_Init();			//mask.DS1820 | mask.DS2450;
-	error = dallas;
+	error = 0;
 	do
 	{
-		owire(0x33,error);//OWbuff,0x08,0);	//read ROM, zapisuj do 1Wbuffra, citaj 9bytov, na konci vypni elektriku
+		owire(0x33,dallas);//OWbuff,0x08,0);	//read ROM, zapisuj do 1Wbuffra, citaj 9bytov, na konci vypni elektriku
 		for(l = 0;l<8;l++)
 		{
-			ow_inp(OWbuff,l,error);		//zacinaj ukladat data vzdy od 1. dallasu byte "l"
+			OWbuff[0].data[l] = ow_inp(dallas);		//zacinaj ukladat data vzdy od 1. dallasu byte "l"
 		}
-		ow_reset(error);
+	 	ow_rstprt(dallas);
+		ow_reset(dallas);
 		error = CheckCRC_8(OWbuff,dallas,8); 	//checkCRC
 		pokus++;
 	}while(error && (pokus < 5));			//cyklus, kym error !=0 alebo try=3 (tri pokusy o spravne nacitanie)
- 	ow_rstprt(dallas);
 
 	if(pokus == 5)	//ak skoncil citanie neuspesne ->chyba na linke v maske error
 	{
@@ -80,10 +78,7 @@ uint8_t GetDallasID(uint8_t j)
 							//maska CRC chyb do pamate
 		eeprom_write_byte(&EE_ow_error,error);		//low byte
 
-		for(l=0;l<OW_NUM;l++)
-		{
-			eeprom_write_block(&OWbuff[l], &EE_ow_id[l], 8);
-	 	}
+		eeprom_write_block(&OWbuff[0], &EE_ow_id[0], 8);
 	}
 
 	return(dallas);
@@ -91,15 +86,15 @@ uint8_t GetDallasID(uint8_t j)
 
 //-----------------------------------------------------------
 
-void owire(uint8_t command, uint8_t dallas)		//, OWIRE buffer[16], uint8_t size, uint8_t power)
+void owire(uint8_t command, register uint8_t dallas)		//, OWIRE buffer[16], uint8_t size, uint8_t power)
 {
 // register uint8_t l;			//owire len zabezpecuje zaciatok komunikacie...
 
 	ow_reset(dallas);
 	ow_setprt(dallas);
 	if(command != 0x33)
-		ow_outp(0xCC,dallas); // skip ROM - only if single dallas is on line...
-	ow_outp(command,dallas);
+		ow_outp(0xCC); // skip ROM - only if single dallas is on line...
+	ow_outp(command);
 /*	for(l = 0;l<size;l++)
 	{
 		ow_inp(buffer,l);	//zacinaj ukladat data vzdy od 1. dallasu byte "l"
@@ -115,52 +110,27 @@ void owire(uint8_t command, uint8_t dallas)		//, OWIRE buffer[16], uint8_t size,
 
 //-----------------------------------------------------------
 
-void ow_outp(register uint8_t data, register uint8_t dallas)
+void ow_outp(register uint8_t data)
 {
   register uint8_t l;
 
 	for(l=0;l<8;l++)
 	{
-		ow_sendbit(dallas,data);
+		ow_sendbit(data);
 		data = data>>1;
 	}
 }
 
 //-----------------------------------------------------------
 
-void ow_inp(OWIRE_t *buffer_ow,register uint8_t x, register uint8_t dallas)		// bude iba 1 dallas!!
+uint8_t ow_inp(register uint8_t dallas)		// bude iba 1 dallas!!
 {
- register uint8_t data;
- register uint8_t l,m;
-
-	for(l=0;l<8;l++)
-	{
-		data = ow_recbit(dallas);
-		data = data & dallas;
-		for(m=OW_NUM;m>0;m--)
-		{
-			buffer_ow[m-1].data[x] >>=1;				//priprava dat v buffri na prichod nasl.bitu
-			buffer_ow[m-1].data[x] &=0xFE;				//vynuluj nulty bit (co ak bol 1?)
-			if(data)
-				buffer_ow[0].data[x] |= 0x80;			//pripisanie nulteho bitu (prave zapisovany dallas)
-
-			data <<=1;						//posun prijatych dat o 1 do ????prava???? do lava??? -> nasl. dallas
-		}
-	}
-}
-
-//-----------------------------------------------------------
-
-uint8_t ow_inp_1(uint8_t dallas)
-{
- uint8_t pom;
  uint8_t l, data = 0;
 
 	for(l=0;l<8;l++)
 	{
-		data >>=1;				//posun prijatych dat o 1 do prava -> nasl. dallas
-		pom = ow_recbit(dallas) & dallas;
-		if(pom)
+		data >>=1;				//posun prijatych dat o 1 do prava -> nasl. bit
+		if((ow_recbit(dallas)& dallas))
 			data |= 0x80;
 	}
 	return(data);
@@ -171,20 +141,14 @@ uint8_t ow_inp_1(uint8_t dallas)
 uint8_t CheckCRC_8(OWIRE_t *buffer_ow, uint8_t dallas, uint8_t count)	//uint8_t base, na zaciatok listu ak spolocne aj pre CRC_16
 {
  uint8_t CRCbuf;	//ak bude spolocny check aj pre CRC_16 tak uint16_t
- uint8_t error = 0;
- uint8_t l,m,data;
+ uint8_t l,data;
 
- 	for(m=0;m<OW_NUM;m++)
- 	{
- 		error >>= 1;
- 		if(dallas & 0x01)
- 		{
  			CRCbuf = 0;
 // 			if(base == 8)
 // 			{
  				for(l=0;l<count;l++)
  				{
- 					data = buffer_ow[m].data[l];
+ 					data = buffer_ow[0].data[l];
  					//(uint8_t)
 					CRCbuf = CRC_8((uint8_t)CRCbuf,(uint8_t)data);
  				}
@@ -198,13 +162,9 @@ uint8_t CheckCRC_8(OWIRE_t *buffer_ow, uint8_t dallas, uint8_t count)	//uint8_t 
 // 				}
 // 			}
  			if(CRCbuf)
+ 			        return(1);
 
- 			        error |= 0x80;
-
- 		}
- 		dallas >>= 1;
- 	}
- 	return(error);
+ 	return(0);
 }
 
 //-----------------------------------------------------------
@@ -259,10 +219,10 @@ uint16_t CRC_16(uint16_t crc, uint8_t x)
 
 //-----------------------------------------------------------
 
-void ow_sendbit(register uint8_t dallas,register uint8_t data)
+void ow_sendbit(register uint8_t data)
 {
 
-	OW_PORT.OUTCLR = dallas;			//clear 1w lines low byte
+	OW_PORT.OUTCLR = OW_bm;			//clear 1w lines low byte
 
 	cli();
 
@@ -271,13 +231,13 @@ void ow_sendbit(register uint8_t dallas,register uint8_t data)
 
 	if(data & 0x01)				//				!data.0
 	{
-		OW_PORT.OUTSET = dallas;			//if send 1, set the lines
+		OW_PORT.OUTSET = OW_bm;			//if send 1, set the lines
 	}
 
 	_delay_us(ONE_WIRE_WRITE_SLOT_TIME_US);
 	
 	sei();
-	OW_PORT.OUTSET = dallas;				// set the 1W lines
+	OW_PORT.OUTSET = OW_bm;				// set the 1W lines
 }
 
 //-----------------------------------------------------------
@@ -303,7 +263,11 @@ uint8_t ow_recbit(register uint8_t dallas)
 	_delay_us(ONE_WIRE_READ_SLOT_TIME_US);
 
 	OW_PORT.DIRSET = dallas;				//return ports to init state for 1w comm (outpu, H on pin)
-	return(pom1);	//
+//	if(pom1 & dallas)
+//		return(1);	//
+//	else
+//		return(0);
+	return(pom1);
 }
 
 //-----------------------------------------------------------
