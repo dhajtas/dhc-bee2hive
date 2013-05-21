@@ -106,7 +106,8 @@ extern MASK_t Mask;
 #define SCL1				PIN6_bm
 #define I2C_P				C
 
-#define OW_bm				SDA0|SDA1|SDA2|SDA3|SDA4|SDA5		// one wire comm
+//#define OW_bm				SDA0|SDA1|SDA2|SDA3|SDA4|SDA5		// one wire comm
+#define OW_bm				SDA5		// one wire comm
 #define OW_P				C 
 #define OW_NUM				1
 
