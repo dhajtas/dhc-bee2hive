@@ -37,7 +37,7 @@
         <ssl>False</ssl>
       </Channel>
     </com_atmel_avrdbg_tool_simulator>
-    <AsfVersion>3.5.1</AsfVersion>
+    <AsfVersion>2.11.1</AsfVersion>
     <com_atmel_avrdbg_tool_ispmk2>
       <ToolType xmlns="">com.atmel.avrdbg.tool.ispmk2</ToolType>
       <ToolName xmlns="">AVRISP mkII</ToolName>
@@ -151,6 +151,9 @@
     <Compile Include="ffft.S">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="i2c_sw.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="include\1wire.h">
       <SubType>compile</SubType>
     </Compile>
@@ -170,6 +173,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\hw.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\i2c_sw.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\routines.h">
