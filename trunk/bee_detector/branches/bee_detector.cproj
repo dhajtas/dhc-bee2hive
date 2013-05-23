@@ -133,6 +133,9 @@
     <Compile Include="1wire.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="3w_spi_sw.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="adc.c">
       <SubType>compile</SubType>
     </Compile>
@@ -155,6 +158,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\1wire.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\3w_spi_sw.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\adc.h">
