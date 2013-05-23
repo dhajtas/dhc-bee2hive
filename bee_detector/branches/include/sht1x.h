@@ -54,30 +54,7 @@ void SHT_write_stat(uint8_t);
 
 uint8_t SHT_reset(uint8_t);		//bolo uint8_t
 
-void SHT_connection_reset(uint8_t);
-
-uint8_t SHT_send8_t(uint8_t,uint8_t);
-
-uint8_t SHT_rcv8_t(uint8_t, uint8_t, uint8_t*);
-
-void SHT_TRX_start(uint8_t);
-
-void SHT_send_bit(uint8_t, uint8_t);
-
-uint8_t SHT_rcv_bit(uint8_t);
-
-//void SHT_send_ack(uint8_t, uint8_t);
-
-//uint8_t SHT_rcv_ack(uint8_t);
-
 void SHT_wait(uint8_t);
-
-void SHT_init(void);
-
-void SHT_clk(uint8_t);
-
-void SHT_sw_data_dir(uint8_t, uint8_t);
-
 
 // only SHT # 0, 2, 3 will be serviced for DS3 device (0 - internal SHT port)
 
