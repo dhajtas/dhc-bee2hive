@@ -1,0 +1,1 @@
+Bee behavior sensing and analysis using noise, humidity and temperature sensor embedded in beehive
